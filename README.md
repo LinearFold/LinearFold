@@ -3,14 +3,17 @@ This repository contains the C++ source code for the LinearFold project, the fir
 
 Preprint: LinearFold: Linear-Time Prediction of RNA Secondary Structures
 
-Liang Huang*, He Zhang, Dezhong Deng, Kai Zhao, Kaibo Liu, David Hendrix, David Mathews
+Liang Huang*, He Zhang**, Dezhong Deng**, Kai Zhao, Kaibo Liu, David Hendrix, David Mathews
 
-*corresponding author
+* corresponding author
+** co-second authors
 
 Web server: http://linearfold.eecs.oregonstate.edu
 
+This codebase replaces the now deprecated version: https://github.com/abentu0101/LinearFold
+
 ## Dependencies
-g++4.7 or above; 
+gcc 4.7 or above; 
 python2.7
 
 
@@ -33,7 +36,7 @@ Both FASTA format and pure-sequence format are supported for input.
 
 OPTIONS:
 
--b
+-b BEAM_SIZE
 
 The beam size (default 100). Use 0 for infinite beam.
 
