@@ -1,8 +1,8 @@
 /*
- *energy_par.h*
+ *energy_parameter.h*
  feature values from ViennaRNA.
 
- author: Dezhong Deng
+ author: Dezhong Deng, He Zhang
  edited by: 02/2018
 */
 

@@ -1,5 +1,5 @@
 /*
- *fastcky_w.h*
+ *feature_weight.h*
  the feature weight for the parser. This code is automatically generated from feature weights in other formats.
 
  author: Kai Zhao, Dezhong Deng

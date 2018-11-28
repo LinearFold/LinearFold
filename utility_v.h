@@ -18,7 +18,7 @@
 #include <string.h>
 #include <cmath>
 
-#include "energy_par.h" // energy_par stuff
+#include "energy_parameter.h" // energy_parameter stuff
 #include "intl11.h"
 #include "intl21.h"
 #include "intl22.h"

@@ -13,7 +13,7 @@
 #include <cstring>
 #include <assert.h>
 
-#include "fastcky_w.h"
+#include "feature_weight.h"
 
 #define INF 1000000007
 

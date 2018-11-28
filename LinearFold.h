@@ -17,8 +17,7 @@
 // #define DOUBLE_MIN std::numeric_limits<double>::lowest()
 #define MIN_CUBE_PRUNING_SIZE 20
 
-#define lv
-//#define mem
+// #define lv
 
 #ifdef lv
   typedef int value_type;
@@ -85,9 +84,9 @@ public:
 
     // int nos_set_update = 0;
 
-    bool use_vienna;
-    bool is_candidate_list;
-    bool is_cube_pruning;
+    // bool use_vienna;
+    // bool is_candidate_list;
+    // bool is_cube_pruning;
     bool no_sharp_turn;
     bool is_verbose;
 
@@ -98,11 +97,11 @@ public:
         double time;
     };
 
-    BeamCKYParser(int beam_size=0,
-                  bool vienna=false,
-                  bool candidate_list=true,
+    BeamCKYParser(int beam_size=100,
+                  // bool vienna=false,
+                  // bool candidate_list=true,
                   bool nosharpturn=true,
-                  bool cube_pruning=true,
+                  // bool cube_pruning=true,
                   bool is_verbose=false);
 
     DecoderResult parse(std::string& seq);
