@@ -17,10 +17,9 @@ gcc 4.7 or above;
 python2.7
 
 
-## To Compile and Make script Runnable
+## To Compile
 ```
 make
-chmod +x linearfold
 ```
 
 ## To Run
@@ -56,4 +55,4 @@ Enable sharpturn in prediction. (default False)
 
 cat testseq | ./linearfold 
 
-echo "GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA" | ./linearfold -b 20 -V --verbose --sharpturn
+echo "GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA" | ./linearfold -V -b 20 --verbose --sharpturn
