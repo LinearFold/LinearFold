@@ -16,7 +16,6 @@ This codebase replaces the now deprecated version: https://github.com/abentu0101
 gcc 4.7 or above; 
 python2.7
 
-
 ## To Compile
 ```
 make
@@ -25,34 +24,35 @@ make
 ## To Run
 The LinearFold parser can be run with:
 ```
-echo "SEQUENCE" | linearfold [OPTIONS]
+echo SEQUENCE | ./linearfold [OPTIONS]
 
 OR
 
-cat SEQ_OR_FASTA_FILE | linearfold [OPTIONS]
+cat SEQ_OR_FASTA_FILE | ./linearfold [OPTIONS]
 ```
 Both FASTA format and pure-sequence format are supported for input.
 
 OPTIONS:
-
+```
 -b BEAM_SIZE
-
+```
 The beam size (default 100). Use 0 for infinite beam.
-
+```
 -V
-
+```
 Switches LinearFold-C (by default) to LinearFold-V.
-
+```
 --verbose
-
+```
 Prints out energy of each loop in the structure. (default False)
-
+```
 --sharpturn
-
+```
 Enable sharpturn in prediction. (default False)
 
 ## Example Run
-
+```
 cat testseq | ./linearfold 
 
-echo "GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA" | ./linearfold -V -b 20 --verbose --sharpturn
+echo GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA | ./linearfold -V -b 20 --verbose --sharpturn
+```
