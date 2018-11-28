@@ -13,15 +13,15 @@
 #include <limits>
 #include <vector>
 #include <unordered_map>
+//#include <stdint.h>
 
-// #define DOUBLE_MIN std::numeric_limits<double>::lowest()
 #define MIN_CUBE_PRUNING_SIZE 20
 
 // #define lv
 
 #ifdef lv
   typedef int value_type;
-  #define VALUE_MIN INT_MIN
+#define VALUE_MIN std::numeric_limits<int>::lowest()
 #else
   typedef double value_type;
   #define VALUE_MIN std::numeric_limits<double>::lowest()
