@@ -10,7 +10,7 @@ Liang Huang*, He Zhang, Dezhong Deng, Kai Zhao, Kaibo Liu, David Hendrix, David 
 Web server: http://linearfold.eecs.oregonstate.edu
 
 ## Dependencies
-g++4.7 or above
+g++4.7 or above; 
 python2.7
 
 
@@ -47,7 +47,7 @@ Prints out energy of each loop in the structure. (default False)
 
 --sharpturn
 
-Enable sharpturn in prediction。 (default False)
+Enable sharpturn in prediction. (default False)
 
 ## Example Run
 
