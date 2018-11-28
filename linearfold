@@ -15,7 +15,6 @@ def setgflags():
 
 def main():
 	use_vienna = FLAGS.V
-	print(use_vienna)
 	beamsize = str(FLAGS.b)
 	is_sharpturn = '1' if FLAGS.sharpturn else '0'
 	is_verbose = '1' if FLAGS.verbose else '0'
