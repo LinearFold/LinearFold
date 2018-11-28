@@ -950,8 +950,8 @@ int main(int argc, char** argv){
 
     if (argc > 1) {
         beamsize = atoi(argv[1]);
-        sharpturn = atoi(argv[2]) == 1 ? true : false;
-        is_verbose = atoi(argv[3]) == 1 ? true : false;
+        sharpturn = atoi(argv[2]) == 1
+        is_verbose = atoi(argv[3]) == 1
     }
 
     // variables for decoding
