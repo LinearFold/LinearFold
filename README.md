@@ -1,16 +1,20 @@
+This codebase replaces the now deprecated version: https://github.com/abentu0101/LinearFold.
+This version fixes many bugs and design problems in the old version.
+
 # LinearFold: Linear-Time Prediction for RNA Secondary Structures
+
 This repository contains the C++ source code for the LinearFold project, the first linear-time prediction algorithm/software for RNA secondary structures.
 
 Preprint: LinearFold: Linear-Time Prediction of RNA Secondary Structures
 
 Liang Huang*, He Zhang**, Dezhong Deng**, Kai Zhao, Kaibo Liu, David Hendrix, David Mathews
 
-* corresponding author
-** co-second authors
+\* corresponding author
+
+** contributed equally
 
 Web server: http://linearfold.eecs.oregonstate.edu
 
-This codebase replaces the now deprecated version: https://github.com/abentu0101/LinearFold
 
 ## Dependencies
 gcc 4.7 or above; 
