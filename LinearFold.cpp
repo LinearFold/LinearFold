@@ -497,7 +497,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                         // so no need to check the score
                         update_if_better(bestMulti[jnext][i], newscore, MANNER_MULTI,
                                          new_l1,
-                                         static_cast<char>(new_l2)
+                                         new_l2
                         );
                         ++nos_Multi;
                     }
@@ -599,7 +599,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
 #endif
                                 update_if_better(bestP[q][p], newscore, MANNER_SINGLE,
                                                  static_cast<char>(i - p),
-                                                 static_cast<char>(q - j));
+                                                 q - j);
                                 ++nos_P;
                             }
 
@@ -836,7 +836,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
 #endif
                             update_if_better(bestMulti[q][p], newscore, MANNER_MULTI,
                                              static_cast<char>(i - p),
-                                             static_cast<char>(q - j));
+                                             q - j);
                             ++ nos_Multi;
 
                             //q = next_pair[nucp][q];
@@ -962,7 +962,7 @@ int main(int argc, char** argv){
     double total_score = .0;
     double total_time = .0;
 
-    BeamCKYParser parser(beamsize, !sharpturn, is_verbose);
+    // BeamCKYParser parser(beamsize, !sharpturn, is_verbose);
 
     // go through the seq file to decode each seq
     //for (string seq; getline(f_seq, seq);) {

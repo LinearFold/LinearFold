@@ -54,7 +54,7 @@ struct State {
         int split;
         struct {
             char l1;
-            char l2;
+            int l2;
         } paddings;
     };
 
@@ -71,7 +71,7 @@ struct State {
         score = score_; manner = manner_; trace.split = split_;
     }
 
-    void set(value_type score_, Manner manner_, char l1_, char l2_) {
+    void set(value_type score_, Manner manner_, char l1_, int l2_) {
         score = score_; manner = manner_;
         trace.paddings.l1 = l1_; trace.paddings.l2 = l2_;
     }
@@ -148,7 +148,7 @@ private:
             state.set(newscore, manner, split);
     };
 
-    void update_if_better(State &state, value_type newscore, Manner manner, char l1, char l2) {
+    void update_if_better(State &state, value_type newscore, Manner manner, char l1, int l2) {
         if (state.score < newscore || state.manner == MANNER_NONE)
             // ++ nos_set_update;
             state.set(newscore, manner, l1, l2);
