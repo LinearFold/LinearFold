@@ -17,7 +17,7 @@ Web server: http://linearfold.eecs.oregonstate.edu
 
 
 ## Dependencies
-gcc 4.7 or above; 
+gcc 4.8.5 or above; 
 python2.7
 
 ## To Compile
