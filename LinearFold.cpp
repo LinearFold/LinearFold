@@ -15,6 +15,8 @@
 #include <tuple>
 #include <cassert>
 #include <unordered_map>
+#include <algorithm>
+#include <string>
 
 #include "utility.h"
 #include "utility_v.h"
@@ -977,6 +979,12 @@ int main(int argc, char** argv){
             printf("Unrecognized sequence: %s\n", seq.c_str());
             continue;
         }
+
+        // convert to uppercase
+        std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+
+        // convert T to U
+        std::replace(seq.begin(), seq.end(), 'T', 'U');
 
         printf("%s\n", seq.c_str());
 
