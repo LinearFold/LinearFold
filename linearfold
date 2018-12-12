@@ -3,6 +3,7 @@
 import gflags as flags
 import subprocess
 import sys
+import os
 
 FLAGS = flags.FLAGS
 
@@ -19,7 +20,8 @@ def main():
 	is_sharpturn = '1' if FLAGS.sharpturn else '0'
 	is_verbose = '1' if FLAGS.verbose else '0'
 
-	cmd = ['./linearfold_v' if use_vienna else './linearfold_c', beamsize, is_sharpturn, is_verbose]
+        path = os.path.dirname(os.path.abspath(__file__))
+	cmd = ["%s/%s" % (path, ('linearfold_v' if use_vienna else 'linearfold_c')), beamsize, is_sharpturn, is_verbose]
 	subprocess.call(cmd, stdin=sys.stdin)
 	
 if __name__ == '__main__':
