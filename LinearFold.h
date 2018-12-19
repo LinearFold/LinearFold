@@ -137,7 +137,7 @@ private:
     void prepare(unsigned len);
 
     void update_if_better(State &state, value_type newscore, Manner manner) {
-        if (state.score < newscore || state.manner == MANNER_NONE)
+      if (state.score < newscore)
             // ++ nos_set_update;
             state.set(newscore, manner);
     };

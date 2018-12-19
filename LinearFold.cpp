@@ -1000,6 +1000,9 @@ int main(int argc, char** argv){
 #endif
         printf("%s (%.2f)\n", result.structure.c_str(), printscore);
 
+	// lhuang: TODO add --time switch
+	printf("beam %d\tlen %d\ttime %.5f\tscore %.2f\n", beamsize, seq.length(), result.time, printscore);	
+
         ++num;
         total_len += seq.length();
         total_score += result.score;
