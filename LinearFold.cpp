@@ -1076,10 +1076,16 @@ int main(int argc, char** argv){
             total_states += result.num_states;
             total_time += result.time;
         }
+
+        // lhuang: TODO add --time switch
+        // printf("beam %d\tlen %d\ttime %.5f\tscore %.2f\n", beamsize, seq.length(), result.time, printscore); 
+
+        // ++num;
+        // total_len += seq.length();
+        // total_score += result.score;
+        // total_states += result.num_states;
+        // total_time += result.time;
     }
-
-
-    // double dnum = (double)num;
 
     return 0;
 }
