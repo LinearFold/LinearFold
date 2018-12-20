@@ -6,8 +6,6 @@
  edited by: 11/2018
 */
 
-#include "LinearFold.h"
-
 #include <fstream>
 #include <iostream>
 #include <sys/time.h>
@@ -18,12 +16,15 @@
 #include <algorithm>
 #include <string>
 
+#include "LinearFold.h"
 #include "utility.h"
 #include "utility_v.h"
+#include "LinearFoldEval.cpp" // adding eval mode
 
 #define SPECIAL_HP
 
 using namespace std;
+
 
 #ifdef lv
     bool comparefunc(std::pair<int,State> a, std::pair<int,State> b) {
@@ -126,6 +127,11 @@ void BeamCKYParser::get_parentheses(char* result, string& seq) {
                 }
                 break;
             case MANNER_MULTI: 
+                p = i + state.trace.paddings.l1;
+                q = j - state.trace.paddings.l2;
+                stk.push(make_tuple(p, q, bestM2[q][p]));
+                break;
+            case MANNER_MULTI_eq_MULTI_plus_U:
                 p = i + state.trace.paddings.l1;
                 q = j - state.trace.paddings.l2;
                 stk.push(make_tuple(p, q, bestM2[q][p]));
@@ -256,7 +262,7 @@ value_type BeamCKYParser::beam_prune(std::unordered_map<int, State> &beamstep) {
         scores.push_back(make_pair(newscore, i));
     }
     if (scores.size() <= beam) return VALUE_MIN;
-    value_type threshold = quickselect(scores, 0, scores.size() - 1, scores.size() - beam);
+    value_type threshold = quickselect(scores, 0, scores.size() - 1, scores.size() - beam + 1); // N.B. +1
     for (auto &p : scores) {
         if (p.first < threshold) beamstep.erase(p.second);
     }
@@ -419,6 +425,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                 for (auto &item : beamstepH) {
 #endif
                     int i = item.first;
+                    // printf("%d\n", i);
                     State &state = item.second;
                     int nuci = nucs[i];
                     int jnext = next_pair[nuci][j];
@@ -495,7 +502,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
 #endif
                         // this candidate must be the best one at [i, jnext]
                         // so no need to check the score
-                        update_if_better(bestMulti[jnext][i], newscore, MANNER_MULTI,
+                        update_if_better(bestMulti[jnext][i], newscore, MANNER_MULTI_eq_MULTI_plus_U,
                                          new_l1,
                                          new_l2
                         );
@@ -949,11 +956,13 @@ int main(int argc, char** argv){
     int beamsize = 100;
     bool sharpturn = false;
     bool is_verbose = false;
+    int is_eval = false;
 
     if (argc > 1) {
         beamsize = atoi(argv[1]);
         sharpturn = atoi(argv[2]) == 1;
         is_verbose = atoi(argv[3]) == 1;
+        is_eval = atoi(argv[4]) == 1; // adding eval mode
     }
 
     // variables for decoding
@@ -962,52 +971,115 @@ int main(int argc, char** argv){
     double total_score = .0;
     double total_time = .0;
 
-    // BeamCKYParser parser(beamsize, !sharpturn, is_verbose);
+    if (is_eval) {
+        int lineIndex = 0;
+        string seq, ref;
+        bool seqflag = false;
+        for (string input; getline(cin, input);) {
+            // printf("Input: %s\n", input.c_str());
+            if (lineIndex % 2 == 0) { // seq
+                seq = input;
+                if (seq.length() == 0) {
+                    // printf("empty sequence!\n");
+                    // seqflag = true;
+                    // lineIndex ++;
+                    continue;
+                }
 
-    // go through the seq file to decode each seq
-    //for (string seq; getline(f_seq, seq);) {
-    for (string seq; getline(cin, seq);) {
-        if (seq.length() == 0)
-            continue;
+                else if (seq[0] == ';' || seq[0] == '>' || (!isalpha(seq[0]))) {
+                    printf("Unrecognized sequence: %s\n", seq.c_str());
+                    seqflag = true;
+                    lineIndex ++;
+                    continue;
+                }
+            }
 
-        if (seq[0] == ';' || seq[0] == '>') {
-            printf("%s\n", seq.c_str());
-            continue;
+            else { // structure
+                ref = input;
+                // printf("%c\n", ref[0]);
+                if (ref.length() == 0) {
+                    // printf("empty structure!\n");
+                    // return 0;
+                    continue;
+                }
+
+                else if ((ref[0] != '.') && (ref[0] != '(') && (ref[0] != ')')) {
+                    printf("Unrecognized structure: %s\n", ref.c_str());
+                    return 0;
+                }
+
+                if (seqflag) {
+                    printf("Reference with wrong sequence!\n");
+                    lineIndex ++;
+                    seqflag = false;
+                    continue;
+                }
+
+                if (seq.length() != ref.length()) {
+                    printf("sequence length is not equal to structure length!\n");
+                    lineIndex ++;
+                    continue;
+                } 
+
+                // print input
+                // printf("%s\n", ref.c_str());
+
+                // call eval function;
+                int MFE_energy = eval(seq, ref);
+                // printf("structure energy: %.2f\n", MFE_energy/ -100.0);
+                printf("%s\n", seq.c_str());
+                printf("%s (%.2f)\n", ref.c_str(), MFE_energy/ -100.0);
+
+            }
+            lineIndex ++;
         }
-
-        if (!isalpha(seq[0])){
-            printf("Unrecognized sequence: %s\n", seq.c_str());
-            continue;
-        }
-
-        // convert to uppercase
-        std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-
-        // convert T to U
-        std::replace(seq.begin(), seq.end(), 'T', 'U');
-
-        printf("%s\n", seq.c_str());
-
-        // lhuang: moved inside loop, fixing an obscure but crucial bug in initialization
-        BeamCKYParser parser(beamsize, !sharpturn, is_verbose);
-
-        BeamCKYParser::DecoderResult result = parser.parse(seq);
-
-#ifdef lv
-        double printscore = (result.score / -100.0);
-#else
-        double printscore = result.score;
-#endif
-        printf("%s (%.2f)\n", result.structure.c_str(), printscore);
-
-        ++num;
-        total_len += seq.length();
-        total_score += result.score;
-        total_states += result.num_states;
-        total_time += result.time;
     }
 
-    double dnum = (double)num;
+    else {
+        for (string seq; getline(cin, seq);) {
+            if (seq.length() == 0)
+                continue;
+
+            if (seq[0] == ';' || seq[0] == '>') {
+                printf("%s\n", seq.c_str());
+                continue;
+            }
+
+            if (!isalpha(seq[0])){
+                printf("Unrecognized sequence: %s\n", seq.c_str());
+                continue;
+            }
+
+            printf("%s\n", seq.c_str());
+            
+            // convert to uppercase
+            std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+
+            // convert T to U
+            std::replace(seq.begin(), seq.end(), 'T', 'U');
+
+            // lhuang: moved inside loop, fixing an obscure but crucial bug in initialization
+            BeamCKYParser parser(beamsize, !sharpturn, is_verbose);
+
+            BeamCKYParser::DecoderResult result = parser.parse(seq);
+
+    #ifdef lv
+            double printscore = (result.score / -100.0);
+    #else
+            double printscore = result.score;
+    #endif
+            printf("%s (%.2f)\n", result.structure.c_str(), printscore);
+
+            ++num;
+            total_len += seq.length();
+            total_score += result.score;
+            total_states += result.num_states;
+            total_time += result.time;
+        }
+    }
+
+
+    // double dnum = (double)num;
 
     return 0;
 }

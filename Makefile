@@ -6,7 +6,7 @@
 ################################
 
 CC=g++
-DEPS=LinearFold.h energy_parameter.h feature_weight.h intl11.h intl21.h intl22.h utility_v.h utility.h 
+DEPS=LinearFold.h energy_parameter.h feature_weight.h intl11.h intl21.h intl22.h utility_v.h utility.h LinearFoldEval.cpp
 CFLAGS=-std=c++11 -O3
 .PHONY : clean linearfold
 objects=linearfold_v linearfold_c

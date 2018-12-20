@@ -2,7 +2,7 @@
  *beamckypar.h*
  header file for beamckypar.
 
- author: Kai Zhao, Dezhong Deng
+ author: Kai Zhao, Dezhong Deng, He Zhang
  edited by: 02/2018
 */
 
@@ -28,21 +28,22 @@
 #endif
 
 enum Manner {
-  MANNER_NONE = 0,          // 0: empty
-  MANNER_H,                 // 1: hairpin candidate
-  MANNER_HAIRPIN,           // 2: hairpin
-  MANNER_SINGLE,            // 3: single
-  MANNER_HELIX,             // 4: helix
-  MANNER_MULTI,             // 5: multi = ..M2.
-  MANNER_P_eq_MULTI,        // 6: P = (..multi..)
-  MANNER_M2_eq_M_plus_P,    // 7: M2 = M + P
-  MANNER_M_eq_M2,           // 8: M = M2
-  MANNER_M_eq_M_plus_U,     // 9: M = M + U
-  MANNER_M_eq_P,            // 10: M = P
+  MANNER_NONE = 0,              // 0: empty
+  MANNER_H,                     // 1: hairpin candidate
+  MANNER_HAIRPIN,               // 2: hairpin
+  MANNER_SINGLE,                // 3: single
+  MANNER_HELIX,                 // 4: helix
+  MANNER_MULTI,                 // 5: multi = ..M2. [30 restriction on the left and jump on the right]
+  MANNER_MULTI_eq_MULTI_plus_U, // 6: multi = multi + U
+  MANNER_P_eq_MULTI,            // 7: P = (multi)
+  MANNER_M2_eq_M_plus_P,        // 8: M2 = M + P
+  MANNER_M_eq_M2,               // 9: M = M2
+  MANNER_M_eq_M_plus_U,         // 10: M = M + U
+  MANNER_M_eq_P,                // 11: M = P
   /* MANNER_C_eq_U, */
   /* MANNER_C_eq_P, */
-  MANNER_C_eq_C_plus_U,     // 11: C = C + U
-  MANNER_C_eq_C_plus_P,     // 12: C = C + P
+  MANNER_C_eq_C_plus_U,     // 12: C = C + U
+  MANNER_C_eq_C_plus_P,     // 13: C = C + P
 };
 
 struct State {
