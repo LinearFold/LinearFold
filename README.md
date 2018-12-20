@@ -53,10 +53,21 @@ Prints out energy of each loop in the structure. (default False)
 --sharpturn
 ```
 Enable sharpturn in prediction. (default False)
+```
+--eval
+```
+Enable eval mode, which can calculate free energy for a given structure of a sequence. (default False)
 
-## Example Run
+## Example Run Predict
 ```
 cat testseq | ./linearfold 
 
 echo GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA | ./linearfold -V -b 20 --verbose --sharpturn
+```
+
+## Example Run Eval
+```
+cat testeval | ./linearfold --eval
+
+echo -e "GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA\n(((((((..((((.......))))((((((((...)))))))).(((((.......))))))))))))....\n" | ./linearfold --eval --verbose 
 ```
