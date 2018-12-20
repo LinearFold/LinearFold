@@ -1025,7 +1025,7 @@ int main(int argc, char** argv){
                 // printf("%s\n", ref.c_str());
 
                 // call eval function;
-                int MFE_energy = eval(seq, ref);
+                int MFE_energy = eval(seq, ref, is_verbose);
                 // printf("structure energy: %.2f\n", MFE_energy/ -100.0);
                 printf("%s\n", seq.c_str());
                 printf("%s (%.2f)\n", ref.c_str(), MFE_energy/ -100.0);

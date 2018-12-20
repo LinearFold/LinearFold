@@ -16,7 +16,7 @@
 
 using namespace std;
 
-int eval(string seq, string ref) {
+int eval(string seq, string ref, bool is_verbose) {
 
     int seq_length = seq.length();
 
@@ -82,7 +82,8 @@ int eval(string seq, string ref) {
                     tetra_hex_tri = if_triloops[i];
                 
                 int newscore = - v_score_hairpin(i, j, nuci, nuci1, nucj_1, nucj, tetra_hex_tri);
-                // printf("Hairpin loop ( %d, %d) %c%c : %.2f\n", i+1, j+1, seq[i], seq[j], newscore / -100.0);
+                if (is_verbose)
+                    printf("Hairpin loop ( %d, %d) %c%c : %.2f\n", i+1, j+1, seq[i], seq[j], newscore / -100.0);
                 total_energy += newscore;
             }
 
@@ -93,7 +94,8 @@ int eval(string seq, string ref) {
 
                 int newscore = - v_score_single(i,j,p,q, nuci, nuci1, nucj_1, nucj,
                                                   nucp_1, nucp, nucq, nucq1);
-                // printf("Interior loop ( %d, %d) %c%c; ( %d, %d) %c%c : %.2f\n", i+1, j+1, seq[i], seq[j], p+1, q+1, seq[p],seq[q], newscore / -100.0);
+                if (is_verbose)
+                    printf("Interior loop ( %d, %d) %c%c; ( %d, %d) %c%c : %.2f\n", i+1, j+1, seq[i], seq[j], p+1, q+1, seq[p],seq[q], newscore / -100.0);
                 total_energy += newscore;
             }
 
@@ -102,7 +104,8 @@ int eval(string seq, string ref) {
                 multi_score += M1_energy[i];
                 multi_score += - v_score_multi(i, j, nuci, nuci1, nucj_1, nucj, seq_length);
                 multi_score += - v_score_multi_unpaired(i+1, i + multi_number_unpaired[i]); // current model is 0
-                // printf("Multi loop ( %d, %d) %c%c : %.2f\n", i+1, j+1, seq[i], seq[j], multi_score / -100.0);
+                if (is_verbose)
+                    printf("Multi loop ( %d, %d) %c%c : %.2f\n", i+1, j+1, seq[i], seq[j], multi_score / -100.0);
                 total_energy += multi_score;
             }
 
