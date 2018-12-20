@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <string>
+#include <map>
 
 #include "LinearFold.h"
 #include "utility.h"
@@ -1021,14 +1022,19 @@ int main(int argc, char** argv){
                     continue;
                 } 
 
+                // remove peudoknots
+                char r;
+                map<char, char> rs = { {'[', '.'}, {']', '.'}, {'{', '.'}, {'}', '.'}, {'<', '.'}, {'>', '.'} };
+                replace_if(ref.begin(), ref.end(), [&](char c){ return r = rs[c]; }, r);
+
                 // print input
                 // printf("%s\n", ref.c_str());
 
                 // call eval function;
-                int MFE_energy = eval(seq, ref, is_verbose);
+                double MFE_energy = eval(seq, ref, is_verbose) / -100.0;
                 // printf("structure energy: %.2f\n", MFE_energy/ -100.0);
                 printf("%s\n", seq.c_str());
-                printf("%s (%.2f)\n", ref.c_str(), MFE_energy/ -100.0);
+                printf("%s (%.2f)\n", input.c_str(), MFE_energy);
 
             }
             lineIndex ++;
@@ -1053,10 +1059,10 @@ int main(int argc, char** argv){
             printf("%s\n", seq.c_str());
             
             // convert to uppercase
-            std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+            transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
             // convert T to U
-            std::replace(seq.begin(), seq.end(), 'T', 'U');
+            replace(seq.begin(), seq.end(), 'T', 'U');
 
             // lhuang: moved inside loop, fixing an obscure but crucial bug in initialization
             BeamCKYParser parser(beamsize, !sharpturn, is_verbose);

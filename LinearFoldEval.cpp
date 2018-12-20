@@ -16,7 +16,7 @@
 
 using namespace std;
 
-int eval(string seq, string ref, bool is_verbose) {
+long eval(string seq, string ref, bool is_verbose) {
 
     int seq_length = seq.length();
 
@@ -31,13 +31,12 @@ int eval(string seq, string ref, bool is_verbose) {
     eval_nucs.resize(seq_length);
     for (int i = 0; i < seq_length; ++i) {
         eval_nucs[i] = GET_ACGU_NUM(seq[i]);
-        // printf("%d\n", eval_nucs[i]);
     }
 
-    int total_energy = 0;
-    int external_energy = 0;
-    int M1_energy[seq_length];
-    int multi_number_unpaired[seq_length];
+    long total_energy = 0;
+    long external_energy = 0;
+    long M1_energy[seq_length];
+    long multi_number_unpaired[seq_length];
     // int external_number_unpaired = 0;
 
     stack<pair<int, int>> stk; // tuple of (index, page)

@@ -7,7 +7,8 @@
 */
 
 #ifndef VIE_INF
-#define VIE_INF 999999999
+// #define VIE_INF 999999999
+#define VIE_INF 10000000 // to be the same as in vienna
 #endif
 #ifndef NBPAIRS
 #define NBPAIRS 7
