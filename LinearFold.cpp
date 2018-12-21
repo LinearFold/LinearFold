@@ -263,7 +263,7 @@ value_type BeamCKYParser::beam_prune(std::unordered_map<int, State> &beamstep) {
         scores.push_back(make_pair(newscore, i));
     }
     if (scores.size() <= beam) return VALUE_MIN;
-    value_type threshold = quickselect(scores, 0, scores.size() - 1, scores.size() - beam + 1); // N.B. +1
+    value_type threshold = quickselect(scores, 0, scores.size() - 1, scores.size() - beam);
     for (auto &p : scores) {
         if (p.first < threshold) beamstep.erase(p.second);
     }
