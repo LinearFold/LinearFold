@@ -957,7 +957,7 @@ int main(int argc, char** argv){
     int beamsize = 100;
     bool sharpturn = false;
     bool is_verbose = false;
-    int is_eval = false;
+    bool is_eval = false;
 
     if (argc > 1) {
         beamsize = atoi(argv[1]);
