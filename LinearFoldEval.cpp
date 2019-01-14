@@ -127,6 +127,7 @@ long eval(string seq, string ref, bool is_verbose) {
         }
     }
 
+    printf("External loop : %.2f\n", external_energy / -100.0);
     total_energy += external_energy;
     return total_energy;
 }
