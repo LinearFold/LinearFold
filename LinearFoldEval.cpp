@@ -1,6 +1,6 @@
 /*
- *beamckypar.h*
- header file for beamckypar.
+ *LinearFoldEval.cpp*
+ Evaluate the energy of a given RNA structure.
 
  author: He Zhang
  edited by: 12/2018

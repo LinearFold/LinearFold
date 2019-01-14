@@ -1,6 +1,6 @@
 /*
- *beamckypar.h*
- header file for beamckypar.
+ *LinearFold.h*
+ header file for LinearFold.cpp.
 
  author: Kai Zhao, Dezhong Deng, He Zhang
  edited by: 02/2018
