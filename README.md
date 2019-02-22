@@ -116,6 +116,7 @@ Interior loop ( 4, 65) CG; ( 5, 64) UA : -2.10
 Interior loop ( 3, 66) GU; ( 4, 65) CG : -2.50
 Interior loop ( 2, 67) GC; ( 3, 66) GU : -1.50
 Interior loop ( 1, 68) GC; ( 2, 67) GC : -3.30
+External loop : -1.70
 GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA
 (((((((..((((.......))))((((((((...)))))))).(((((.......)))))))))))).... (-31.50)
 ```
