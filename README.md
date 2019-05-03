@@ -13,7 +13,7 @@ Liang Huang*, He Zhang**, Dezhong Deng**, Kai Zhao, Kaibo Liu, David Hendrix, Da
 
 ** contributed equally
 
-Web server: http://linearfold.eecs.oregonstate.edu
+Web server: http://linearfold.org
 
 
 ## Dependencies
