@@ -11,8 +11,11 @@
 #define VIE_INF 10000000 // to be the same as in vienna
 #endif
 #ifndef NBPAIRS
-#define NBPAIRS 7
+#define NBPAIRS 7 // NP CG GC GU UG AU UA NN
 #endif
+
+// nucleotides: CONTRAfold: 0:A 1:C 2:G 3:U 4:N ; Vienna: 0:N 1:A 2:C 3:G 4:U
+// TODO: unify
 
 #define SPECIAL_HP
 //int special_hp = 1;
@@ -61,8 +64,8 @@ char Hexaloops[361] =
 int Hexaloop37[4] = {   280,   360,   290,   180};
 
 int stack37[NBPAIRS+1][NBPAIRS+1] =
-    //                CG    GC      GU    UG     AU     UA     NN     
-    {{   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}
+    //            NP        CG    GC      GU    UG     AU     UA     NN     
+  /*NP*/    {{  VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}
      /*CG*/,{   VIE_INF,  -240,  -330,  -210,  -140,  -210,  -210,  -140}
      /*GC*/,{   VIE_INF,  -330,  -340,  -250,  -150,  -220,  -240,  -150}
      /*GU*/,{   VIE_INF,  -210,  -250,   130,   -50,  -140,  -130,   130}
@@ -71,10 +74,12 @@ int stack37[NBPAIRS+1][NBPAIRS+1] =
      /*UA*/,{   VIE_INF,  -210,  -240,  -130,  -100,   -90,  -130,   -90}
      /*NN*/,{   VIE_INF,  -140,  -150,   130,    30,   -60,   -90,   130}};
 
+// lhuang                 0          1           2        3      4      5      6      7      8      9     10     
 int hairpin37[31] = {   VIE_INF,   VIE_INF,   VIE_INF,   540,   560,   570,   540,   600,   550,   640,   650,   660,   670,   680,   690,   690,   700,   710,   710,   720,   720,   730,   730,   740,   740,   750,   750,   750,   760,   760,   770};
 int bulge37[31] = {   VIE_INF,   380,   280,   320,   360,   400,   440,   460,   470,   480,   490,   500,   510,   520,   530,   540,   540,   550,   550,   560,   570,   570,   580,   580,   580,   590,   590,   600,   600,   600,   610};
 int internal_loop37[31] = {   VIE_INF,   VIE_INF,   100,   100,   110,   200,   200,   210,   230,   240,   250,   260,   270,   280,   290,   290,   300,   310,   310,   320,   330,   330,   340,   340,   350,   350,   350,   360,   360,   370,   370};
 
+// lhuang: terminal mismatch for internal loop
 int mismatchI37[NBPAIRS+1][5][5] =
 {{{   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}
  ,{   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}
@@ -82,12 +87,14 @@ int mismatchI37[NBPAIRS+1][5][5] =
  ,{   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}
  ,{   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}
  }
+ // lhuang: CG..
 ,{{     0,     0,     0,     0,     0}
  ,{     0,     0,     0,   -80,     0}
  ,{     0,     0,     0,     0,     0}
  ,{     0,  -100,     0,  -100,     0}
  ,{     0,     0,     0,     0,   -60}
  }
+ // lhuang: GC..
 ,{{     0,     0,     0,     0,     0}
  ,{     0,     0,     0,   -80,     0}
  ,{     0,     0,     0,     0,     0}
@@ -125,6 +132,7 @@ int mismatchI37[NBPAIRS+1][5][5] =
  ,{    70,    70,    70,    70,    10}
  }};
 
+// lhuang: terminal mismatch for hairpin
 int mismatchH37[NBPAIRS+1][5][5] =
 {{{   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}
  ,{   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}
@@ -146,30 +154,35 @@ int mismatchH37[NBPAIRS+1][5][5] =
  ,{  -150,  -250,  -150,  -220,  -150}
  ,{  -100,  -110,  -100,  -110,  -160}
  }
+ // lhuang: GU..
 ,{{    20,    20,   -20,   -10,   -20}
  ,{    20,    20,   -50,   -30,   -50}
  ,{   -10,   -10,   -20,   -10,   -20}
  ,{   -50,  -100,   -50,  -110,   -50}
  ,{   -10,   -10,   -30,   -10,  -100}
  }
+ // lhuang: UG..
 ,{{     0,   -20,   -10,   -20,     0}
  ,{   -30,   -50,   -30,   -60,   -30}
  ,{     0,   -20,   -10,   -20,     0}
  ,{   -30,   -90,   -30,  -110,   -30}
  ,{   -10,   -20,   -10,   -20,   -90}
  }
+ // lhuang: AU..
 ,{{   -10,   -10,   -20,   -10,   -20}
  ,{   -30,   -30,   -50,   -30,   -50}
  ,{   -10,   -10,   -20,   -10,   -20}
  ,{   -50,  -120,   -50,  -110,   -50}
  ,{   -10,   -10,   -30,   -10,  -120}
  }
+ // lhuang: UA..
 ,{{     0,   -20,   -10,   -20,     0}
  ,{   -30,   -50,   -30,   -50,   -30}
  ,{     0,   -20,   -10,   -20,     0}
  ,{   -30,  -150,   -30,  -150,   -30}
  ,{   -10,   -20,   -10,   -20,   -90}
  }
+ // lhuang: NN..
 ,{{    20,    20,   -10,   -10,     0}
  ,{    20,    20,   -30,   -30,   -30}
  ,{     0,   -10,   -10,   -10,     0}
@@ -335,6 +348,7 @@ int mismatch23I37[NBPAIRS+1][5][5] =
  ,{    70,    70,    70,    70,    40}
  }};
 
+// lhuang: terminal mismatch for external loop
 int mismatchExt37[NBPAIRS+1][5][5] =
 {{ /* NP.. */
   {   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF,   VIE_INF}

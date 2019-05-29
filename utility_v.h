@@ -9,7 +9,12 @@
 #ifndef FASTCKY_UTILITY_V_H
 #define FASTCKY_UTILITY_V_H
 
+// pairs: 0:NP 1:CG 2:GC 3:GU 4:UG 5:AU 6:UA 7:NN
+// nucleotides: CONTRAfold: 0:A 1:C 2:G 3:U 4:N ; Vienna: 0:N 1:A 2:C 3:G 4:U
+// TODO: unify
 #define NUM_TO_NUC(x) (x==-1?-1:((x==4?0:(x+1))))
+
+// lhuang: NB: before NUM_TO_NUC
 #define NUM_TO_PAIR(x,y) (x==0? (y==3?5:0) : (x==1? (y==2?1:0) : (x==2 ? (y==1?2:(y==3?3:0)) : (x==3 ? (y==2?4:(y==0?6:0)) : 0))))
 #define NUC_TO_PAIR(x,y) (x==1? (y==4?5:0) : (x==2? (y==3?1:0) : (x==3 ? (y==2?2:(y==4?3:0)) : (x==4 ? (y==3?4:(y==1?6:0)) : 0))))
 
