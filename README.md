@@ -5,7 +5,7 @@ This version fixes many bugs and design problems in the old version.
 
 This repository contains the C++ source code for the LinearFold project, the first linear-time prediction algorithm/software for RNA secondary structures.
 
-Preprint: LinearFold: Linear-Time Approximate RNA Folding by 5’-to-3’ Dynamic Programming and Beam Search
+[LinearFold: Linear-Time Approximate RNA Folding by 5’-to-3’ Dynamic Programming and Beam Search](https://academic.oup.com/bioinformatics/article/35/14/i295/5529205). Bioinformatics, Volume 35, Issue 14, July 2019, Pages i295–i304. ISMB 2019
 
 Liang Huang*, He Zhang**, Dezhong Deng**, Kai Zhao, Kaibo Liu, David Hendrix, David Mathews
 
