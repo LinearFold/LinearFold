@@ -18,8 +18,8 @@
 #include <map>
 
 #include "LinearFold.h"
-#include "utility.h"
-#include "utility_v.h"
+#include "Utils/utility.h"
+#include "Utils/utility_v.h"
 #include "LinearFoldEval.cpp" // adding eval mode
 
 #define SPECIAL_HP

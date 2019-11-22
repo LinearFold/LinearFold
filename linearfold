@@ -23,7 +23,7 @@ def main():
     is_eval = '1' if FLAGS.eval else '0'
 
     path = os.path.dirname(os.path.abspath(__file__))
-    cmd = ["%s/%s" % (path, ('linearfold_v' if use_vienna else 'linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval]
+    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval]
     subprocess.call(cmd, stdin=sys.stdin)
     
 if __name__ == '__main__':

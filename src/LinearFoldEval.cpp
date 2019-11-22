@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "LinearFold.h"
-#include "utility_v.h"
-#include "utility.h"
+#include "Utils/utility_v.h"
+#include "Utils/utility.h"
 
 using namespace std;
 
