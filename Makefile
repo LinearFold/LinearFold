@@ -9,7 +9,7 @@ CC=g++
 DEPS=src/LinearFoldEval.cpp src/LinearFold.h src/Utils/energy_parameter.h src/Utils/feature_weight.h src/Utils/intl11.h src/Utils/intl21.h src/Utils/intl22.h src/Utils/utility_v.h src/Utils/utility.h 
 CFLAGS=-std=c++11 -O3
 .PHONY : clean linearfold
-objects=linearfold_v linearfold_c
+objects=bin/linearfold_v bin/linearfold_c
 
 linearfold: src/LinearFold.cpp $(DEPS) 
 		chmod +x linearfold
