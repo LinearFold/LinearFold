@@ -13,6 +13,7 @@ def setgflags():
     flags.DEFINE_boolean('sharpturn', False, "enable sharp turn in prediction, (DEFAULT=FALSE)")
     flags.DEFINE_boolean('verbose', False, "print out energy of each loop in the structure, (DEFAULT=FALSE)")
     flags.DEFINE_boolean('eval', False, "print out energy of a given structure, (DEFAULT=FALSE)") # adding eval mode
+    flags.DEFINE_boolean('constraints', False, "print out energy of a given structure, (DEFAULT=FALSE)") # adding eval mode
     argv = FLAGS(sys.argv)
 
 def main():
@@ -21,9 +22,10 @@ def main():
     is_sharpturn = '1' if FLAGS.sharpturn else '0'
     is_verbose = '1' if FLAGS.verbose else '0'
     is_eval = '1' if FLAGS.eval else '0'
+    is_constraints = '1' if FLAGS.constraints else '0'
 
     path = os.path.dirname(os.path.abspath(__file__))
-    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval]
+    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval, is_constraints]
     subprocess.call(cmd, stdin=sys.stdin)
     
 if __name__ == '__main__':

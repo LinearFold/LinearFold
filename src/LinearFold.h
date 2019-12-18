@@ -90,6 +90,7 @@ public:
     // bool is_cube_pruning;
     bool no_sharp_turn;
     bool is_verbose;
+    bool use_constraints; // lisiz, add constraints
 
     struct DecoderResult {
         std::string structure;
@@ -103,9 +104,11 @@ public:
                   // bool candidate_list=true,
                   bool nosharpturn=true,
                   // bool cube_pruning=true,
-                  bool is_verbose=false);
+                  bool is_verbose=false,
+                  bool is_constraints=false); // lisiz, add constraints
 
-    DecoderResult parse(std::string& seq);
+    // DecoderResult parse(std::string& seq);
+    DecoderResult parse(std::string& seq, std::vector<int>* cons);
 
 private:
     void get_parentheses(char* result, std::string& seq);
@@ -135,7 +138,14 @@ private:
 
     std::vector<int> nucs;
 
-    void prepare(unsigned len);
+    // void prepare(unsigned len);
+
+    // lisiz: constraints
+    std::vector<int> allow_unpaired_position;
+    std::vector<int> allow_unpaired_range;
+    bool allow_paired(int i, int j, std::vector<int>* cons, char nuci, char nucj);
+
+    void prepare(unsigned len, std::vector<int>* cons);
 
     void update_if_better(State &state, value_type newscore, Manner manner) {
       if (state.score < newscore)
