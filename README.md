@@ -60,9 +60,9 @@ Enable eval mode, which can calculate free energy for a given structure of a seq
 ```
 --constraints
 ```
-Enable adding specific constraints in prediction. (dafault False)
-Constraint sequence has the same length as the RNA sequence. 
-"? . ( )" indicates a position for which the proper matching is unknown, unpaired, left and right parenthesis. The parentheses must be well-banlanced and no-crossing.
+Enable adding specific constraints in prediction (dafault False). 
+The constraint sequence should have the same length as the RNA sequence. 
+"? . ( )" indicates a position for which the proper matching is unknown, unpaired, left and right parenthesis respectively. The parentheses must be well-banlanced and non-crossing.
 
 ## Example Run Predict
 ```
