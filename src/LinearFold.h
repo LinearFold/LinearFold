@@ -145,7 +145,7 @@ private:
     std::vector<int> allow_unpaired_range;
     bool allow_paired(int i, int j, std::vector<int>* cons, char nuci, char nucj);
 
-    void prepare(unsigned len, std::vector<int>* cons);
+    void prepare(unsigned len);
 
     void update_if_better(State &state, value_type newscore, Manner manner) {
       if (state.score < newscore)

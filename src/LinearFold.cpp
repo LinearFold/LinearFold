@@ -192,12 +192,16 @@ void BeamCKYParser::get_parentheses(char* result, string& seq) {
                 break;
             default:  // MANNER_NONE or other cases
                 if (use_constraints){
-                    printf("Can't find a valid structure for this constraint, possible reasons:\n");
-                    printf("Constraints for sinlgeloop (i, p, q, j), |i - p| + |q - j| > 30;\n");
-                    printf("Or constraints for multiloop (i, p, q, j), |i - p| > 30.\n");
-                }
+                    printf("We can't find a valid structure for this sequence and constraint.\n");
+                    printf("There are two minor restrictions in our real system:\n");
+                    printf("the length of an interior loop is bounded by 30nt \n");
+                    printf("(a standard limit found in most existing RNA folding software such as CONTRAfold)\n");
+                    printf("so is the leftmost (50-end) unpaired segment of a multiloop (new constraint).\n");
+                    exit(1);
+                } 
                 printf("wrong manner at %d, %d: manner %d\n", i, j, state.manner); fflush(stdout);
                 assert(false);
+                
         }
     }
 
@@ -301,7 +305,7 @@ void BeamCKYParser::sortM(value_type threshold,
 
 
 // void BeamCKYParser::prepare(unsigned len) {
-void BeamCKYParser::prepare(unsigned len, vector<int>* cons) {
+void BeamCKYParser::prepare(unsigned len) {
     seq_length = len;
 
     bestH.clear();
@@ -327,24 +331,12 @@ void BeamCKYParser::prepare(unsigned len, vector<int>* cons) {
 
     scores.reserve(seq_length);
 
-    // lisiz, constraints
-    if (use_constraints && cons) {
+    if (use_constraints){
         allow_unpaired_position.clear();
         allow_unpaired_position.resize(seq_length);
-        
-        for (int i=0; i<seq_length; i++){
-            allow_unpaired_position[i] = (*cons)[i] == -1 || (*cons)[i] == -2;
-        }
-        
+
         allow_unpaired_range.clear();
         allow_unpaired_range.resize(seq_length);
-        
-        int firstpair = seq_length;
-        for (int i=seq_length-1; i>-1; i--){
-            allow_unpaired_range[i] = firstpair;
-            if ((*cons)[i] >= 0)
-                firstpair = i;
-        }
     }
 }
 
@@ -366,10 +358,30 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
     gettimeofday(&parse_starttime, NULL);
 
     // prepare(static_cast<unsigned>(seq.length()));
-    prepare(static_cast<unsigned>(seq.length()), cons);
+    prepare(static_cast<unsigned>(seq.length()));
 
     for (int i = 0; i < seq_length; ++i)
         nucs[i] = GET_ACGU_NUM(seq[i]);
+
+    // lisiz, constraints
+    if (use_constraints) {
+        for (int i=0; i<seq_length; i++){
+            int cons_idx = (*cons)[i];
+            allow_unpaired_position[i] = cons_idx == -1 || cons_idx == -2;
+            if (cons_idx > -1){
+                if (!_allowed_pairs[nucs[i]][nucs[cons_idx]]){
+                    printf("Constrains on non-classical base pairs (non AU, CG, GU pairs)\n");
+                    exit(1);
+                }
+            }
+        }
+        int firstpair = seq_length;
+        for (int i=seq_length-1; i>-1; i--){
+            allow_unpaired_range[i] = firstpair;
+            if ((*cons)[i] >= 0)
+                firstpair = i;
+        }
+    }
 
     vector<int> next_pair[NOTON];
     {
@@ -745,7 +757,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
 
                             // lisiz constraints
                             if (use_constraints){
-                                if (q>j+1 && q > allow_unpaired_range[j]) // loop, no positions must be paired
+                                if (q>j+1 && q > allow_unpaired_range[j]) // loop
                                     break;
                                 if (!allow_paired(p, q, cons, nucp, nucq)) // p q is ) (
                                     break;
@@ -1193,6 +1205,7 @@ int main(int argc, char** argv){
                     constr = input;
                     if (seq.length() != constr.length())
                         printf("The lengths don't match between sequence and constraints: %s, %s\n", seq.c_str(), constr.c_str());
+                        // return 0;
                     int n = seq.length();
                     vector<int> cons(n);
                     stack<int> leftBrackets;
