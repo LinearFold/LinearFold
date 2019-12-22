@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <string>
 #include <map>
+#include <set>
 
 #include "LinearFold.h"
 #include "Utils/utility.h"
@@ -190,8 +191,17 @@ void BeamCKYParser::get_parentheses(char* result, string& seq) {
                 }
                 break;
             default:  // MANNER_NONE or other cases
+                if (use_constraints){
+                    printf("We can't find a valid structure for this sequence and constraint.\n");
+                    printf("There are two minor restrictions in our real system:\n");
+                    printf("the length of an interior loop is bounded by 30nt \n");
+                    printf("(a standard limit found in most existing RNA folding software such as CONTRAfold)\n");
+                    printf("so is the leftmost (50-end) unpaired segment of a multiloop (new constraint).\n");
+                    exit(1);
+                } 
                 printf("wrong manner at %d, %d: manner %d\n", i, j, state.manner); fflush(stdout);
                 assert(false);
+                
         }
     }
 
@@ -294,6 +304,7 @@ void BeamCKYParser::sortM(value_type threshold,
 }
 
 
+// void BeamCKYParser::prepare(unsigned len) {
 void BeamCKYParser::prepare(unsigned len) {
     seq_length = len;
 
@@ -319,10 +330,24 @@ void BeamCKYParser::prepare(unsigned len) {
     nucs.resize(seq_length);
 
     scores.reserve(seq_length);
+
+    if (use_constraints){
+        allow_unpaired_position.clear();
+        allow_unpaired_position.resize(seq_length);
+
+        allow_unpaired_range.clear();
+        allow_unpaired_range.resize(seq_length);
+    }
 }
 
+// lisiz, constraints
+bool BeamCKYParser::allow_paired(int i, int j, vector<int>* cons, char nuci, char nucj) {
+    return ((*cons)[i] == -1 || (*cons)[i] == j) && ((*cons)[j] == -1 || (*cons)[j] == i) && _allowed_pairs[nuci][nucj];
+}
 
-BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
+// BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
+
+BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons) {
 
     struct timeval parse_starttime, parse_endtime;
 
@@ -332,19 +357,51 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
 
     gettimeofday(&parse_starttime, NULL);
 
+    // prepare(static_cast<unsigned>(seq.length()));
     prepare(static_cast<unsigned>(seq.length()));
 
     for (int i = 0; i < seq_length; ++i)
         nucs[i] = GET_ACGU_NUM(seq[i]);
 
+    // lisiz, constraints
+    if (use_constraints) {
+        for (int i=0; i<seq_length; i++){
+            int cons_idx = (*cons)[i];
+            allow_unpaired_position[i] = cons_idx == -1 || cons_idx == -2;
+            if (cons_idx > -1){
+                if (!_allowed_pairs[nucs[i]][nucs[cons_idx]]){
+                    printf("Constrains on non-classical base pairs (non AU, CG, GU pairs)\n");
+                    exit(1);
+                }
+            }
+        }
+        int firstpair = seq_length;
+        for (int i=seq_length-1; i>-1; i--){
+            allow_unpaired_range[i] = firstpair;
+            if ((*cons)[i] >= 0)
+                firstpair = i;
+        }
+    }
+
     vector<int> next_pair[NOTON];
     {
-        for (int nuci = 0; nuci < NOTON; ++nuci) {
-            next_pair[nuci].resize(seq_length, -1);
-            int next = -1;
-            for (int j = seq_length-1; j >=0; --j) {
-                next_pair[nuci][j] = next;
-                if (_allowed_pairs[nuci][nucs[j]]) next = j;
+        if (use_constraints){
+            for (int nuci = 0; nuci < NOTON; ++nuci) {
+                next_pair[nuci].resize(seq_length, -1);
+                int next = -1;
+                for (int j = seq_length-1; j >=0; --j) {
+                    next_pair[nuci][j] = next;
+                    if ((*cons)[j] > -2 && _allowed_pairs[nuci][nucs[j]]) next = j;
+                }
+            }
+        } else {
+            for (int nuci = 0; nuci < NOTON; ++nuci) {
+                next_pair[nuci].resize(seq_length, -1);
+                int next = -1;
+                for (int j = seq_length-1; j >=0; --j) {
+                    next_pair[nuci][j] = next;
+                    if (_allowed_pairs[nuci][nucs[j]]) next = j;
+                }
             }
         }
     }
@@ -388,6 +445,19 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                 // for nucj put H(j, j_next) into H[j_next]
                 int jnext = next_pair[nucj][j];
                 if (no_sharp_turn) while (jnext - j < 4 && jnext != -1) jnext = next_pair[nucj][jnext];
+
+                // lisiz, constriants
+                if (use_constraints){
+                    if (!allow_unpaired_position[j]){
+                        jnext = (*cons)[j] > j ? (*cons)[j] : -1;
+                    }
+                    if (jnext != -1){
+                        int nucjnext = nucs[jnext];
+                        if (jnext > allow_unpaired_range[j] || !allow_paired(j, jnext, cons, nucj, nucjnext))
+                            jnext = -1;
+                    }
+                }
+
                 if (jnext != -1) {
                     int nucjnext = nucs[jnext];
                     int nucjnext_1 = (jnext - 1) > -1 ? nucs[jnext - 1] : -1;
@@ -431,6 +501,20 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                     int nuci = nucs[i];
                     int jnext = next_pair[nuci][j];
 
+                    // 2. generate p(i, j)
+                    // lisiz, change the order because of the constriants
+                    {
+                        update_if_better(beamstepP[i], state.score, MANNER_HAIRPIN);
+                        ++ nos_P;
+                    }
+
+                    // lisiz, constraints
+                    if (jnext != -1 && use_constraints){
+                        int nucjnext = nucs[jnext];
+                        if (jnext > allow_unpaired_range[i] || !allow_paired(i, jnext, cons, nuci, nucjnext))
+                            continue;
+                    }
+
                     if (jnext != -1) {
                         int nuci1 = (i + 1) < seq_length ? nucs[i + 1] : -1;
                         int nucjnext = nucs[jnext];
@@ -458,12 +542,6 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                         update_if_better(bestH[jnext][i], newscore, MANNER_H);
                         ++nos_H;
                     }
-
-                    // 2. generate p(i, j)
-                    {
-                        update_if_better(beamstepP[i], state.score, MANNER_HAIRPIN);
-                        ++ nos_P;
-                    }
                 }
             }
         }
@@ -488,6 +566,26 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                 int nuci1 = nucs[i+1];
                 int jnext = next_pair[nuci][j];
 
+                // 2. generate P (i, j)
+                // lisiz, change the order because of the constraits
+                {
+                    value_type newscore;
+#ifdef lv
+                        newscore = state.score - v_score_multi(i, j, nuci, nuci1, nucs[j-1], nucj, seq_length);
+#else
+                        newscore = state.score + score_multi(i, j, nuci, nuci1, nucs[j-1], nucj, seq_length);
+#endif
+                    update_if_better(beamstepP[i], newscore, MANNER_P_eq_MULTI);
+                    ++ nos_P;
+                }
+
+                // lisiz cnstriants
+                if (jnext != -1 && use_constraints){
+                    int nucjnext = nucs[jnext];
+                    if (jnext > allow_unpaired_range[j] || !allow_paired(i, jnext, cons, nuci, nucjnext))
+                        continue;
+                }
+
                 // 1. extend (i, j) to (i, jnext)
                 {
                     char new_l1 = state.trace.paddings.l1;
@@ -509,20 +607,6 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                         );
                         ++nos_Multi;
                     }
-                }
-
-                // 2. generate P (i, j)
-                {
-                    value_type newscore;
-#ifdef lv
-                        newscore = state.score -
-                            v_score_multi(i, j, nuci, nuci1, nucs[j-1], nucj, seq_length);
-#else
-                        newscore = state.score +
-                            score_multi(i, j, nuci, nuci1, nucs[j-1], nucj, seq_length);
-#endif
-                    update_if_better(beamstepP[i], newscore, MANNER_P_eq_MULTI);
-                    ++ nos_P;
                 }
             }
         }
@@ -553,69 +637,6 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                 State& state = item.second;
                 int nuci = nucs[i];
                 int nuci_1 = (i-1>-1) ? nucs[i-1] : -1;
-
-                // 1. generate new helix / single_branch
-                // new state is of shape p..i..j..q
-                if (i >0 && j<seq_length-1) {
-                    value_type precomputed;
-#ifdef lv
-                        precomputed = 0;
-#else
-                        precomputed = score_junction_B(j, i, nucj, nucj1, nuci_1, nuci);
-#endif
-                    for (int p = i - 1; p >= std::max(i - SINGLE_MAX_LEN, 0); --p) {
-                        int nucp = nucs[p];
-                        int nucp1 = nucs[p + 1]; // hzhang: move here
-                        int q = next_pair[nucp][j];
-                        while (q != -1 && ((i - p) + (q - j) - 2 <= SINGLE_MAX_LEN)) {
-                            int nucq = nucs[q];
-                            // int nucp_1 = nucs[p - 1]; // hzhang: no need
-                            // int nucp1 = nucs[p + 1]; // hzhang: move to outside of while loop
-                            int nucq_1 = nucs[q - 1];
-                            // int nucq1 = nucs[q + 1]; // hzhang: no need
-                            // int nuci1 = nucs[i + 1]; // hzhang: no need
-                            // int nucj_1 = nucs[j - 1]; // hzhang: no need
-                            // int nucq = nucs[q];
-                            // int nucp1 = nucs[p + 1];
-                            // int nucq_1 = nucs[q - 1];
-
-                            if (p == i - 1 && q == j + 1) {
-                                // helix
-                                value_type newscore;
-#ifdef lv
-                                    newscore = -v_score_single(p,q,i,j, nucp, nucp1, nucq_1, nucq,
-                                                             nuci_1, nuci, nucj, nucj1)
-                                        + state.score;
-#else
-                                    newscore = score_helix(nucp, nucp1, nucq_1, nucq) + state.score;
-#endif
-                                update_if_better(bestP[q][p], newscore, MANNER_HELIX);
-                                ++nos_P;
-                            } else {
-                                // single branch
-                                value_type newscore;
-#ifdef lv
-                                    newscore = - v_score_single(p,q,i,j, nucp, nucp1, nucq_1, nucq,
-                                                   nuci_1, nuci, nucj, nucj1)
-                                        + state.score;
-#else
-                                    newscore = score_junction_B(p, q, nucp, nucp1, nucq_1, nucq) +
-                                        precomputed +
-                                        score_single_without_junctionB(p, q, i, j,
-                                                                       nuci_1, nuci, nucj, nucj1) +
-                                        state.score;
-#endif
-                                update_if_better(bestP[q][p], newscore, MANNER_SINGLE,
-                                                 static_cast<char>(i - p),
-                                                 q - j);
-                                ++nos_P;
-                            }
-
-                            q = next_pair[nucp][q];
-                        }
-                    }
-                }
-                //printf(" helix / single at %d\n", j); fflush(stdout);
 
                 // 2. M = P
                 if(i > 0 && j < seq_length-1){
@@ -706,6 +727,88 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                     }
                 }
                 //printf(" C = C + P at %d\n", j); fflush(stdout);
+
+                // 1. generate new helix / single_branch
+                // new state is of shape p..i..j..q
+                if (i >0 && j<seq_length-1) {
+                    value_type precomputed;
+#ifdef lv
+                        precomputed = 0;
+#else
+                        precomputed = score_junction_B(j, i, nucj, nucj1, nuci_1, nuci);
+#endif
+                    for (int p = i - 1; p >= std::max(i - SINGLE_MAX_LEN, 0); --p) {
+                        int nucp = nucs[p];
+                        int nucp1 = nucs[p + 1]; // hzhang: move here
+                        int q = next_pair[nucp][j];
+
+                        // lisiz constraints
+                        if (use_constraints){
+                            if (p < i-1 && !allow_unpaired_position[p+1]) // p+1 can be unpaired
+                                break;
+                            if (!allow_unpaired_position[p]){ // p must be paired
+                                q = (*cons)[p];
+                                if (q < p) break; // p is )
+                            }
+                        }
+
+                        while (q != -1 && ((i - p) + (q - j) - 2 <= SINGLE_MAX_LEN)) {
+                            int nucq = nucs[q];
+
+                            // lisiz constraints
+                            if (use_constraints){
+                                if (q>j+1 && q > allow_unpaired_range[j]) // loop
+                                    break;
+                                if (!allow_paired(p, q, cons, nucp, nucq)) // p q is ) (
+                                    break;
+                            }
+
+                            // int nucp_1 = nucs[p - 1]; // hzhang: no need
+                            // int nucp1 = nucs[p + 1]; // hzhang: move to outside of while loop
+                            int nucq_1 = nucs[q - 1];
+                            // int nucq1 = nucs[q + 1]; // hzhang: no need
+                            // int nuci1 = nucs[i + 1]; // hzhang: no need
+                            // int nucj_1 = nucs[j - 1]; // hzhang: no need
+                            // int nucq = nucs[q];
+                            // int nucp1 = nucs[p + 1];
+                            // int nucq_1 = nucs[q - 1];
+
+                            if (p == i - 1 && q == j + 1) {
+                                // helix
+                                value_type newscore;
+#ifdef lv
+                                    newscore = -v_score_single(p,q,i,j, nucp, nucp1, nucq_1, nucq,
+                                                             nuci_1, nuci, nucj, nucj1)
+                                        + state.score;
+#else
+                                    newscore = score_helix(nucp, nucp1, nucq_1, nucq) + state.score;
+#endif
+                                update_if_better(bestP[q][p], newscore, MANNER_HELIX);
+                                ++nos_P;
+                            } else {
+                                // single branch
+                                value_type newscore;
+#ifdef lv
+                                    newscore = - v_score_single(p,q,i,j, nucp, nucp1, nucq_1, nucq,
+                                                   nuci_1, nuci, nucj, nucj1)
+                                        + state.score;
+#else
+                                    newscore = score_junction_B(p, q, nucp, nucp1, nucq_1, nucq) +
+                                        precomputed +
+                                        score_single_without_junctionB(p, q, i, j,
+                                                                       nuci_1, nuci, nucj, nucj1) +
+                                        state.score;
+#endif
+                                update_if_better(bestP[q][p], newscore, MANNER_SINGLE,
+                                                 static_cast<char>(i - p),
+                                                 q - j);
+                                ++nos_P;
+                            }
+                            q = next_pair[nucp][q];
+                        }
+                    }
+                }
+                //printf(" helix / single at %d\n", j); fflush(stdout);
             }
 
             if (use_cube_pruning) {
@@ -826,11 +929,32 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                 int i = item.first;
                 State& state = item.second;
 
+                // 2. M = M2
+                {
+                    update_if_better(beamstepM[i], state.score, MANNER_M_eq_M2);
+                    ++ nos_M;
+                }
+
                 // 1. multi-loop
                 {
                     for (int p = i-1; p >= std::max(i - SINGLE_MAX_LEN, 0); --p) {
                         int nucp = nucs[p];
                         int q = next_pair[nucp][j];
+
+                        if (use_constraints){
+                            if (p < i - 1 && !allow_unpaired_position[p+1])
+                                break;
+                            if (!allow_unpaired_position[p]){
+                                q = (*cons)[p];
+                                if (q < p) break;
+                            }
+                            if (q > j+1 && q > allow_unpaired_range[j])
+                                continue;
+                            int nucq = nucs[q];
+                            if (!allow_paired(p, q, cons, nucp, nucq))
+                                continue;
+                        }
+
                         if (q != -1 && ((i - p - 1) <= SINGLE_MAX_LEN)) {
                             // the current shape is p..i M2 j ..q
 
@@ -850,12 +974,6 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                             //q = next_pair[nucp][q];
                         }
                     }
-                }
-
-                // 2. M = M2
-                {
-                    update_if_better(beamstepM[i], state.score, MANNER_M_eq_M2);
-                    ++ nos_M;
                 }
             }
         }
@@ -882,6 +1000,8 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
                 int i = item.first;
                 State& state = item.second;
                 if (j < seq_length-1) {
+                    if (use_constraints && !allow_unpaired_position[j+1])
+                        continue;
                     value_type newscore;
                     // if (use_vienna)
 #ifdef lv
@@ -901,6 +1021,8 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
         {
             // C = C + U
             if (j < seq_length-1) {
+                if (use_constraints && !allow_unpaired_position[j+1])
+                        continue;
                 value_type newscore;
 #ifdef lv
                     newscore = -v_score_external_unpaired(j+1, j+1) + beamstepC.score;
@@ -937,10 +1059,12 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq) {
 
 BeamCKYParser::BeamCKYParser(int beam_size,
                              bool nosharpturn,
-                             bool verbose)
+                             bool verbose,
+                             bool constraints)
     : beam(beam_size), 
       no_sharp_turn(nosharpturn), 
-      is_verbose(verbose) {
+      is_verbose(verbose),
+      use_constraints(constraints){
 #ifdef lv
         initialize();
 #else
@@ -958,12 +1082,14 @@ int main(int argc, char** argv){
     bool sharpturn = false;
     bool is_verbose = false;
     bool is_eval = false;
+    bool is_constraints = false; // lisiz, add constraints
 
     if (argc > 1) {
         beamsize = atoi(argv[1]);
         sharpturn = atoi(argv[2]) == 1;
         is_verbose = atoi(argv[3]) == 1;
         is_eval = atoi(argv[4]) == 1; // adding eval mode
+        is_constraints = atoi(argv[5]) == 1; // lisiz, add constraints
     }
 
     // variables for decoding
@@ -1042,47 +1168,142 @@ int main(int argc, char** argv){
     }
 
     else {
-        for (string seq; getline(cin, seq);) {
-            if (seq.length() == 0)
-                continue;
+        if (is_constraints){
+            int lineIndex = 0;
+            string seq, constr;
+            bool seqflag, consflag;
+            set<char> consSet {'?', '.', '(', ')'};
+            for (string input; getline(cin, input);){
+                if (input[0] == ';' || input[0] == '>') {
+                    printf("%s\n", input.c_str());
+                    continue;
+                }
+                if (lineIndex % 2 == 0) { // seq
+                    seq = input;
+                    
+                    // check the seq
+                    if (seq.length() == 0)
+                    continue;
+                    
+                    if (!isalpha(seq[0])){
+                        printf("Unrecognized sequence: %s\n", seq.c_str());
+                        continue;
+                    }
+                    
+                    // valid seq
+                    printf("%s\n", seq.c_str());
+                    
+                    // convert to uppercase
+                    transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
-            if (seq[0] == ';' || seq[0] == '>') {
+                    // convert T to U
+                    replace(seq.begin(), seq.end(), 'T', 'U');
+                    
+                    seqflag = true;
+                    lineIndex ++;
+                } else { // constraint
+                    constr = input;
+                    if (seq.length() != constr.length())
+                        printf("The lengths don't match between sequence and constraints: %s, %s\n", seq.c_str(), constr.c_str());
+                        // return 0;
+                    int n = seq.length();
+                    vector<int> cons(n);
+                    stack<int> leftBrackets;
+                    consflag = true;
+                    for (int i=0; i < n; i++){
+                        char coni = constr[i];
+                        if (consSet.count(coni) == 0){
+                            printf("Unrecognized constraint character, should be ? . ( or )\n");
+                            consflag = false;
+                            break;
+                        }
+                        switch(coni){
+                            case '.':
+                                cons[i] = -2;
+                                break;
+                            case '?':
+                                cons[i] = -1;
+                                break;
+                            case '(':
+                                leftBrackets.push(i);
+                                break;
+                            case ')':
+                                int leftIndex = leftBrackets.top();
+                                leftBrackets.pop();
+                                cons[leftIndex] = i;
+                                cons[i] = leftIndex;
+                                break;
+                        }
+                    }
+                    
+                    seqflag = false;
+                    lineIndex ++;
+
+                    if (consflag) {
+                        printf("%s\n", constr.c_str());
+                        
+                        // lhuang: moved inside loop, fixing an obscure but crucial bug in initialization
+                        BeamCKYParser parser(beamsize, !sharpturn, is_verbose, is_constraints);
+
+                        BeamCKYParser::DecoderResult result = parser.parse(seq, &cons);
+
+                #ifdef lv
+                        double printscore = (result.score / -100.0);
+                #else
+                        double printscore = result.score;
+                #endif
+                        printf("%s (%.2f)\n", result.structure.c_str(), printscore);
+
+                        ++num;
+                        total_len += seq.length();
+                        total_score += result.score;
+                        total_states += result.num_states;
+                        total_time += result.time;
+                    }
+                }
+            }
+        } else {
+            for (string seq; getline(cin, seq);) {
+                if (seq.length() == 0)
+                    continue;
+
+                if (seq[0] == ';' || seq[0] == '>') {
+                    printf("%s\n", seq.c_str());
+                    continue;
+                }
+
+                if (!isalpha(seq[0])){
+                    printf("Unrecognized sequence: %s\n", seq.c_str());
+                    continue;
+                }
+
                 printf("%s\n", seq.c_str());
-                continue;
+                
+                // convert to uppercase
+                transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+
+                // convert T to U
+                replace(seq.begin(), seq.end(), 'T', 'U');
+
+                // lhuang: moved inside loop, fixing an obscure but crucial bug in initialization
+                BeamCKYParser parser(beamsize, !sharpturn, is_verbose);
+
+                BeamCKYParser::DecoderResult result = parser.parse(seq, NULL);
+
+        #ifdef lv
+                double printscore = (result.score / -100.0);
+        #else
+                double printscore = result.score;
+        #endif
+                printf("%s (%.2f)\n", result.structure.c_str(), printscore);
+
+                ++num;
+                total_len += seq.length();
+                total_score += result.score;
+                total_states += result.num_states;
+                total_time += result.time;
             }
-
-            if (!isalpha(seq[0])){
-                printf("Unrecognized sequence: %s\n", seq.c_str());
-                continue;
-            }
-
-            printf("%s\n", seq.c_str());
-            
-            // convert to uppercase
-            transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-
-            // convert T to U
-            replace(seq.begin(), seq.end(), 'T', 'U');
-
-            // lhuang: moved inside loop, fixing an obscure but crucial bug in initialization
-            BeamCKYParser parser(beamsize, !sharpturn, is_verbose);
-
-            BeamCKYParser::DecoderResult result = parser.parse(seq);
-
-    #ifdef lv
-            double printscore = (result.score / -100.0);
-    #else
-            double printscore = result.score;
-    #endif
-            printf("%s (%.2f)\n", result.structure.c_str(), printscore);
-
-            ++num;
-            total_len += seq.length();
-            total_score += result.score;
-            total_states += result.num_states;
-            total_time += result.time;
         }
-
         // lhuang: TODO add --time switch
         // printf("beam %d\tlen %d\ttime %.5f\tscore %.2f\n", beamsize, seq.length(), result.time, printscore); 
 
