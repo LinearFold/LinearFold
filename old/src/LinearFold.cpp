@@ -943,10 +943,7 @@ int main(int argc, char** argv){
 #endif
 	     gettimeofday(&total_endtime, NULL);
 	     double total_elapsed_time = total_endtime.tv_sec - total_starttime.tv_sec + (total_endtime.tv_usec-total_starttime.tv_usec)/1000000.0;
-
-	     printf("Time: %.2f\n", total_elapsed_time);
-	     printf("Score: %.2f\n", printscore);
-	     printf("%s\n", result.structure.c_str());
+	     printf("%s (%.2f)\n", result.structure.c_str(), printscore);
         }
     }
 
