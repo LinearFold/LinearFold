@@ -17,7 +17,7 @@ Web server: http://linearfold.org
 
 
 ## Dependencies
-g++ 4.8.5 or above; 
+GCC 4.8.5 or above; 
 python2.7
 
 ## To Compile
