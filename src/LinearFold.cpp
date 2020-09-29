@@ -269,7 +269,10 @@ value_type BeamCKYParser::beam_prune(std::unordered_map<int, State> &beamstep) {
         int i = item.first;
         State &cand = item.second;
         int k = i - 1;
-        value_type newscore = (k >= 0 ? bestC[k].score : 0) + cand.score;
+        value_type newscore;
+        // lisiz: for _V, avoid -inf-int=+inf
+        if ((k >= 0) && (bestC[k].score == VALUE_MIN)) newscore = VALUE_MIN;
+        else newscore = (k >= 0 ? bestC[k].score : 0) + cand.score;
         scores.push_back(make_pair(newscore, i));
     }
     if (scores.size() <= beam) return VALUE_MIN;
@@ -291,7 +294,10 @@ void BeamCKYParser::sortM(value_type threshold,
             int i = item.first;
             State &cand = item.second;
             int k = i - 1;
-            value_type newscore = (k >= 0 ? bestC[k].score : 0) + cand.score;
+            value_type newscore;
+            // lisiz: constraints may cause all VALUE_MIN, sorting has no use
+            if ((use_constraints) && (k >= 0) && (bestC[k].score == VALUE_MIN)) newscore = cand.score;
+            else newscore = (k >= 0 ? bestC[k].score : 0) + cand.score;
             sorted_stepM.push_back(make_pair(newscore, i));
         }
     } else {
@@ -449,11 +455,11 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
                 // lisiz, constriants
                 if (use_constraints){
                     if (!allow_unpaired_position[j]){
-                        jnext = (*cons)[j] > j ? (*cons)[j] : -1;
+                        jnext = (*cons)[j] > j ? (*cons)[j] : -1; // lisiz: j must be left bracket, jump to the constrainted pair (j, j') directly
                     }
                     if (jnext != -1){
                         int nucjnext = nucs[jnext];
-                        if (jnext > allow_unpaired_range[j] || !allow_paired(j, jnext, cons, nucj, nucjnext))
+                        if (jnext > allow_unpaired_range[j] || !allow_paired(j, jnext, cons, nucj, nucjnext))  // lisiz: avoid cross constrainted brackets or unallowed pairs
                             jnext = -1;
                     }
                 }
@@ -744,11 +750,11 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
 
                         // lisiz constraints
                         if (use_constraints){
-                            if (p < i-1 && !allow_unpaired_position[p+1]) // p+1 can be unpaired
+                            if (p < i-1 && !allow_unpaired_position[p+1]) // lisiz: if p+1 must be paired, break
                                 break;
-                            if (!allow_unpaired_position[p]){ // p must be paired
+                            if (!allow_unpaired_position[p]){             // lisiz: if p must be paired, p must be left bracket
                                 q = (*cons)[p];
-                                if (q < p) break; // p is )
+                                if (q < p) break;
                             }
                         }
 
@@ -757,9 +763,9 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
 
                             // lisiz constraints
                             if (use_constraints){
-                                if (q>j+1 && q > allow_unpaired_range[j]) // loop
+                                if (q>j+1 && q > allow_unpaired_range[j])  // lisiz: if q-1 must be paired, break
                                     break;
-                                if (!allow_paired(p, q, cons, nucp, nucq)) // p q is ) (
+                                if (!allow_paired(p, q, cons, nucp, nucq)) // lisiz: if p q are )(, break
                                     break;
                             }
 
@@ -1000,7 +1006,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
                 int i = item.first;
                 State& state = item.second;
                 if (j < seq_length-1) {
-                    if (use_constraints && !allow_unpaired_position[j+1])
+                    if (use_constraints && !allow_unpaired_position[j+1]) // if j+1 must be paired
                         continue;
                     value_type newscore;
                     // if (use_vienna)
