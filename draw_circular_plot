@@ -1,0 +1,32 @@
+#!/usr/bin/env python2.7
+import os, sys, subprocess
+from collections import defaultdict
+import math
+
+i = 0
+seq, res = "", ""
+for line in sys.stdin.readlines():
+    if line.startswith(">"): continue
+    if i == 0:
+        seq = line.strip()
+        i += 1
+    elif i == 1:
+        res = line.strip()
+        i += 1
+    else: break
+
+print seq
+print res
+if len(seq) != len(res):
+    print "sequence and structure lengths are not the same!"
+    sys.exit()
+
+
+ref = "." * len(res)
+
+print "Processing seq..."
+
+os.system("echo \"%s %s %s\" | ./src/scripts/gen_latex_script.py > %s.tex" % \
+          (seq, res, ref, "circular_plot"))
+
+os.system("pdflatex circular_plot.tex")
