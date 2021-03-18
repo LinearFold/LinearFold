@@ -64,6 +64,16 @@ Enable adding specific constraints in prediction (default False).
 The constraint sequence should have the same length as the RNA sequence. 
 "? . ( )" indicates a position for which the proper matching is unknown, unpaired, left or right parenthesis respectively. The parentheses must be well-banlanced and non-crossing.
 
+## To Visualize 
+LinearFold is able to visualize the structure using a circular plot.
+
+To draw a circular plot, run command:  
+```
+cat TARGET_FILE | ./draw_circular_plot 
+```
+TARGET_FILE contains one sequence and its structure; see "ecoli_tRNA" file as an example.
+
+
 ## Example Run Predict
 ```
 cat testseq | ./linearfold
@@ -147,3 +157,10 @@ External loop : -1.70
 GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA
 (((((((..((((.......))))((((((((...)))))))).(((((.......)))))))))))).... (-31.50)
 ```
+
+## Example: Draw Circular Plot
+```
+cat ecoli_tRNA | ./draw_circular_plot
+```
+<img src="./vis_examples/circular_plot.png" width="400">
+
