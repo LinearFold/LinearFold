@@ -2,8 +2,8 @@
  *LinearFold.h*
  header file for LinearFold.cpp.
 
- author: Kai Zhao, Dezhong Deng, He Zhang
- edited by: 02/2018
+ author: Kai Zhao, Dezhong Deng, He Zhang, Liang Zhang
+ edited by: 03/2021
 */
 
 #ifndef FASTCKY_BEAMCKYPAR_H
@@ -45,6 +45,44 @@ enum Manner {
   MANNER_C_eq_C_plus_U,     // 12: C = C + U
   MANNER_C_eq_C_plus_P,     // 13: C = C + P
 };
+
+
+enum BestTypes {
+  TYPE_C = 0,
+  TYPE_H,
+  TYPE_P,
+  TYPE_M,
+  TYPE_Multi,
+  TYPE_M2,
+};
+
+
+bool cmp(const std::tuple<value_type, int, int>& a, const std::tuple<value_type, int, int>& b) 
+{ 
+    if (std::get<0>(a) != std::get<0>(b))
+        return (std::get<0>(a) < std::get<0>(b));
+
+    else
+        return  ((std::get<1>(a) - std::get<2>(a)) < (std::get<1>(b) - std::get<2>(b)));
+
+} 
+
+
+void window_fill(std::set<std::pair<int,int> >& window_visited, const int i, const int j, const int seq_length, const int window_size){
+
+    for (int ii = std::max(0,i-window_size); ii <= std::min(seq_length-1, i+window_size); ++ii){
+        for (int jj = std::max(0,j-window_size); jj <= std::min(seq_length-1, j+window_size); ++jj){
+            if (ii < jj){
+                window_visited.insert(std::make_pair(ii,jj));
+            }
+        }
+    }
+
+    return;
+}
+
+
+
 
 struct State {
     // double score;
@@ -91,6 +129,10 @@ public:
     bool no_sharp_turn;
     bool is_verbose;
     bool use_constraints; // lisiz, add constraints
+    bool zuker;
+    int  window_size; //2 + 1 + 2 = 5 in total, 5*5 window size.
+    float zuker_energy_delta;
+
 
     struct DecoderResult {
         std::string structure;
@@ -105,17 +147,27 @@ public:
                   bool nosharpturn=true,
                   // bool cube_pruning=true,
                   bool is_verbose=false,
-                  bool is_constraints=false); // lisiz, add constraints
+                  bool is_constraints=false,
+                  bool zuker_subopt=false,
+                  float zuker_energy_delta=5.0); // lisiz, add constraints
 
     // DecoderResult parse(std::string& seq);
     DecoderResult parse(std::string& seq, std::vector<int>* cons);
+    void outside(std::vector<int> next_pair[]); //for zuker subopt
 
 private:
     void get_parentheses(char* result, std::string& seq);
 
+    std::pair<std::string, std::string> get_parentheses_outside_real_backtrace(int i, int j, State& state_beta, std::map<std::tuple<BestTypes, int, int>, std::pair<std::string, std::string> >& global_visited_outside, std::map<std::tuple<BestTypes, int, int>, std::string>& global_visited_inside, std::set<std::pair<int,int> >& window_visited);
+    std::string get_parentheses_inside_real_backtrace(int i, int j, State& state, std::map<std::tuple<BestTypes, int, int>, std::string>& global_visited_inside, std::set<std::pair<int,int> >& window_visited);
+
+
     unsigned seq_length;
 
     std::vector<std::unordered_map<int, State>> bestH, bestP, bestM2, bestMulti, bestM;
+
+    //Zuker subopt
+    std::vector<std::unordered_map<int, State>> bestH_beta, bestP_beta, bestM2_beta, bestMulti_beta, bestM_beta;
 
     std::vector<int> if_tetraloops;
     std::vector<int> if_hexaloops;
@@ -135,6 +187,9 @@ private:
                std::vector<std::pair<value_type, int>>& sorted_stepM);
 
     std::vector<State> bestC;
+    //Zuker subopt
+    std::vector<State> bestC_beta;
+
 
     std::vector<int> nucs;
 

@@ -2,8 +2,8 @@
  *LinearFold.cpp*
  The main code for LinearFold: Linear-Time RNA Structure Prediction.
 
- author: Kai Zhao, Dezhong Deng, He Zhang
- edited by: 11/2018
+ author: Kai Zhao, Dezhong Deng, He Zhang, Liang Zhang
+ edited by: 05/2021
 */
 
 #include <fstream>
@@ -310,7 +310,675 @@ void BeamCKYParser::sortM(value_type threshold,
 }
 
 
-// void BeamCKYParser::prepare(unsigned len) {
+//subopt zuker inside, bestP_beta sorted, subopt zuker optimized version
+std::string BeamCKYParser::get_parentheses_inside_real_backtrace(int i, int j, State& state, map<tuple<BestTypes, int, int>, string>& global_visited_inside, set<pair<int,int> >& window_visited) {
+
+    Manner manner = state.manner;
+    value_type score = state.score;
+
+    if (manner == MANNER_H){
+        return "";
+    }
+
+    else if (manner == MANNER_HAIRPIN){
+
+
+        if (global_visited_inside.count(make_tuple(TYPE_P, i, j))) {
+            return global_visited_inside[make_tuple(TYPE_P, i, j)];
+        }
+
+
+        std::string inner(j-i-1, '.');
+        global_visited_inside[make_tuple(TYPE_P, i, j)] = '(' + inner + ')';
+        window_fill(window_visited, i, j, seq_length, window_size);
+        return global_visited_inside[make_tuple(TYPE_P, i, j)];
+    }
+
+    else if (manner == MANNER_SINGLE){
+
+        if (global_visited_inside.count(make_tuple(TYPE_P,i,j))) {
+            return global_visited_inside[make_tuple(TYPE_P,i,j)];
+        }
+
+        auto p = i + state.trace.paddings.l1;
+        auto q = j - state.trace.paddings.l2;
+
+        std::string left(state.trace.paddings.l1-1, '.');
+        std::string right(state.trace.paddings.l2-1,'.');
+
+        if (!global_visited_inside.count(make_tuple(TYPE_P,p,q))){
+
+            global_visited_inside[make_tuple(TYPE_P,p,q)] = get_parentheses_inside_real_backtrace(p, q, bestP[q][p],global_visited_inside, window_visited);
+        }
+
+        global_visited_inside[make_tuple(TYPE_P,i,j)] = '(' + left + global_visited_inside[make_tuple(TYPE_P,p,q)] + right + ')';
+
+        window_fill(window_visited, i, j, seq_length, window_size);
+
+        return global_visited_inside[make_tuple(TYPE_P,i,j)];
+
+    }
+
+    else if (manner == MANNER_HELIX){
+
+        if (global_visited_inside.count(make_tuple(TYPE_P,i,j))){
+            return global_visited_inside[make_tuple(TYPE_P,i,j)];
+        }
+
+
+        if (!global_visited_inside.count(make_tuple(TYPE_P,i+1,j-1))){
+
+            global_visited_inside[make_tuple(TYPE_P,i+1,j-1)] = get_parentheses_inside_real_backtrace(i+1, j-1, bestP[j-1][i+1],global_visited_inside, window_visited);
+        }
+
+        global_visited_inside[make_tuple(TYPE_P,i,j)] = '(' + global_visited_inside[make_tuple(TYPE_P,i+1,j-1)] + ')';
+
+        window_fill(window_visited, i, j, seq_length, window_size);
+
+        return global_visited_inside[make_tuple(TYPE_P,i,j)];
+
+    }
+
+    else if (manner == MANNER_MULTI){
+
+        // Multi = (....M2.....)  Multi: M; M2: N; M1: m
+        if (global_visited_inside.count(make_tuple(TYPE_Multi,i,j))){
+            return global_visited_inside[make_tuple(TYPE_Multi,i,j)];
+        }
+
+        auto p = i + state.trace.paddings.l1;
+        auto q = j - state.trace.paddings.l2;
+
+
+        std::string left(state.trace.paddings.l1-1, '.');
+        std::string right(state.trace.paddings.l2-1,'.');
+
+        if (!global_visited_inside.count(make_tuple(TYPE_M2,q,p))){
+            global_visited_inside[make_tuple(TYPE_M2,q,p)] = get_parentheses_inside_real_backtrace(p, q, bestM2[q][p],global_visited_inside, window_visited);
+
+        }
+
+        global_visited_inside[make_tuple(TYPE_Multi,i,j)] = left + global_visited_inside[make_tuple(TYPE_M2,q,p)] + right;
+
+        return global_visited_inside[make_tuple(TYPE_Multi,i,j)];
+    }
+
+    else if (manner == MANNER_MULTI_eq_MULTI_plus_U){
+
+        if (global_visited_inside.count(make_tuple(TYPE_Multi,i,j))){
+            return global_visited_inside[make_tuple(TYPE_Multi,i,j)];
+        }
+
+        auto p = i + state.trace.paddings.l1;
+        auto q = j - state.trace.paddings.l2;
+
+        std::string left(state.trace.paddings.l1-1, '.');
+        std::string right(state.trace.paddings.l2-1,'.');
+
+        if (!global_visited_inside.count(make_tuple(TYPE_M2,p,q))){
+            global_visited_inside[make_tuple(TYPE_M2,p,q)] = get_parentheses_inside_real_backtrace(p, q, bestM2[q][p],global_visited_inside, window_visited);
+        }
+
+        global_visited_inside[make_tuple(TYPE_Multi,i,j)] = left + global_visited_inside[make_tuple(TYPE_M2,p,q)] + right;
+
+        return global_visited_inside[make_tuple(TYPE_Multi,i,j)];
+    }
+
+    else if (manner == MANNER_P_eq_MULTI){
+
+        if (global_visited_inside.count(make_tuple(TYPE_P,i,j))){
+            return global_visited_inside[make_tuple(TYPE_P,i,j)];
+        }
+
+
+        if (!global_visited_inside.count(make_tuple(TYPE_Multi,i,j))){
+            global_visited_inside[make_tuple(TYPE_Multi,i,j)] = get_parentheses_inside_real_backtrace(i, j, bestMulti[j][i],global_visited_inside, window_visited);
+        }
+
+        global_visited_inside[make_tuple(TYPE_P,i,j)] = '(' + global_visited_inside[make_tuple(TYPE_Multi,i,j)] + ')';
+
+
+        window_fill(window_visited, i, j, seq_length, window_size);
+
+
+        return global_visited_inside[make_tuple(TYPE_P,i,j)];
+    }
+
+    else if (manner == MANNER_M2_eq_M_plus_P){
+
+        if (global_visited_inside.count(make_tuple(TYPE_M2,i,j))){
+            return global_visited_inside[make_tuple(TYPE_M2,i,j)];
+        }
+
+        auto k = state.trace.split;
+
+        if (!global_visited_inside.count(make_tuple(TYPE_M,i,k))){
+
+            global_visited_inside[make_tuple(TYPE_M,i,k)] = get_parentheses_inside_real_backtrace(i,k,bestM[k][i],global_visited_inside, window_visited);
+        }
+
+        if (!global_visited_inside.count(make_tuple(TYPE_P,k+1,j))){
+            global_visited_inside[make_tuple(TYPE_P,k+1,j)] = get_parentheses_inside_real_backtrace(k+1, j, bestP[j][k+1],global_visited_inside, window_visited);
+        }
+
+        global_visited_inside[make_tuple(TYPE_M2,i,j)] = global_visited_inside[make_tuple(TYPE_M,i,k)] + global_visited_inside[make_tuple(TYPE_P,k+1,j)];
+
+        return global_visited_inside[make_tuple(TYPE_M2,i,j)];
+    }
+
+    else if (manner == MANNER_M_eq_M2){
+
+        if (global_visited_inside.count(make_tuple(TYPE_M,i,j))){
+            return global_visited_inside[make_tuple(TYPE_M,i,j)];
+        }  
+
+        if (!global_visited_inside.count(make_tuple(TYPE_M2,i,j))) {
+
+            global_visited_inside[make_tuple(TYPE_M2,i,j)] = get_parentheses_inside_real_backtrace(i, j, bestM2[j][i],global_visited_inside, window_visited);
+        }
+
+        global_visited_inside[make_tuple(TYPE_M,i,j)] = global_visited_inside[make_tuple(TYPE_M2,i,j)];
+
+        return global_visited_inside[make_tuple(TYPE_M,i,j)];
+    }
+
+    else if (manner == MANNER_M_eq_M_plus_U){
+        // Multi: M; M2: N; M1: m
+        if (global_visited_inside.count(make_tuple(TYPE_M,i,j))){
+            return global_visited_inside[make_tuple(TYPE_M,i,j)];
+        }
+
+        if (!global_visited_inside.count(make_tuple(TYPE_M,i,j-1))){
+
+            global_visited_inside[make_tuple(TYPE_M,i,j-1)] = get_parentheses_inside_real_backtrace(i, j-1, bestM[j-1][i],global_visited_inside, window_visited);
+        }
+        global_visited_inside[make_tuple(TYPE_M,i,j)] = global_visited_inside[make_tuple(TYPE_M,i,j-1)] + '.';
+
+        return global_visited_inside[make_tuple(TYPE_M,i,j)];
+    }
+
+    else if (manner == MANNER_M_eq_P){
+        // Multi: M; M2: N; M1: m
+        if (global_visited_inside.count(make_tuple(TYPE_M,i,j))){
+            return global_visited_inside[make_tuple(TYPE_M,i,j)];
+        }
+
+        if (!global_visited_inside.count(make_tuple(TYPE_P,i,j))){
+
+            global_visited_inside[make_tuple(TYPE_P,i,j)] = get_parentheses_inside_real_backtrace(i, j, bestP[j][i],global_visited_inside, window_visited);
+        }
+        global_visited_inside[make_tuple(TYPE_M,i,j)] = global_visited_inside[make_tuple(TYPE_P,i,j)];
+
+        return global_visited_inside[make_tuple(TYPE_M,i,j)];
+    }
+
+    else if (manner == MANNER_C_eq_C_plus_U){
+
+        assert(i == 0);
+
+        if (global_visited_inside.count(make_tuple(TYPE_C,i,j))) {
+            return global_visited_inside[make_tuple(TYPE_C,i,j)];
+        }
+
+        auto k = j - 1;
+
+        if (!global_visited_inside.count(make_tuple(TYPE_C,i,k))) {
+            if (k != -1){
+                global_visited_inside[make_tuple(TYPE_C,i,k)] = get_parentheses_inside_real_backtrace(0, k, bestC[k],global_visited_inside, window_visited);
+            }
+            else {
+                global_visited_inside[make_tuple(TYPE_C,i,k)] = "";
+            }
+        }
+        global_visited_inside[make_tuple(TYPE_C,i,j)] = global_visited_inside[make_tuple(TYPE_C,i,k)] + '.';
+
+        return global_visited_inside[make_tuple(TYPE_C,i,j)];
+
+    }
+
+    else if (manner == MANNER_C_eq_C_plus_P){
+
+        assert(i == 0);
+
+        if (global_visited_inside.count(make_tuple(TYPE_C,i,j))){
+            return global_visited_inside[make_tuple(TYPE_C,i,j)];
+        }
+
+
+        auto k = state.trace.split;
+
+        if (!global_visited_inside.count(make_tuple(TYPE_C,i,k))){
+            if (k != -1){
+                global_visited_inside[make_tuple(TYPE_C,i,k)] = get_parentheses_inside_real_backtrace(0, k, bestC[k],global_visited_inside, window_visited);
+            }
+            else{
+                global_visited_inside[make_tuple(TYPE_C,i,k)] = "";
+            }
+        }
+
+        if (!global_visited_inside.count(make_tuple(TYPE_P,k+1,j))){
+            global_visited_inside[make_tuple(TYPE_P,k+1,j)] = get_parentheses_inside_real_backtrace(k+1, j, bestP[j][k+1],global_visited_inside, window_visited);
+        }
+
+
+        global_visited_inside[make_tuple(TYPE_C,i,j)] = global_visited_inside[make_tuple(TYPE_C,i,k)] + global_visited_inside[make_tuple(TYPE_P,k+1,j)];
+
+        return global_visited_inside[make_tuple(TYPE_C,i,j)];
+
+    }
+
+
+    else {
+        printf("wrong manner inside at %d, %d: manner %d\n", i, j, state.manner); fflush(stdout);
+        assert(false);
+    }
+
+}
+
+//subopt zuker inside, sorted bestP_beta, the optimized opt zuker altorithm
+pair<string, string> BeamCKYParser::get_parentheses_outside_real_backtrace(int i, int j, State& state_beta, map<tuple<BestTypes, int, int>, pair<string, string>>& global_visited_outside, map<tuple<BestTypes, int, int>, string>& global_visited_inside, set<pair<int,int>>& window_visited) {
+
+    Manner manner = state_beta.manner;
+
+    if (manner == MANNER_SINGLE){
+        // (p, (i, j), q) from (i, j) to (p, q)
+
+        if (global_visited_outside.count(make_tuple(TYPE_P, i, j))){
+            return global_visited_outside[make_tuple(TYPE_P, i, j)];
+        }
+
+
+        auto p = i - state_beta.trace.paddings.l1;  //l1 = (i-p)
+        auto q = j + state_beta.trace.paddings.l2;  //l2 = (q-j)
+
+        std::string left(state_beta.trace.paddings.l1-1, '.');
+        std::string right(state_beta.trace.paddings.l2-1,'.');
+
+        if (!global_visited_outside.count(make_tuple(TYPE_P, p, q))) {
+
+            global_visited_outside[make_tuple(TYPE_P, p, q)] = get_parentheses_outside_real_backtrace(p, q, bestP_beta[q][p], global_visited_outside, global_visited_inside, window_visited);
+
+        }
+
+        auto outsider = global_visited_outside[make_tuple(TYPE_P, p, q)];
+
+        global_visited_outside[make_tuple(TYPE_P, i, j)] = make_pair(outsider.first + '(' + left, right + ')' + outsider.second);
+
+        window_fill(window_visited, p, q, seq_length, window_size);
+
+        return global_visited_outside[make_tuple(TYPE_P, i, j)];
+
+    }
+
+    else if (manner == MANNER_HELIX){
+
+
+        if (global_visited_outside.count(make_tuple(TYPE_P, i, j))){
+
+            return global_visited_outside[make_tuple(TYPE_P, i, j)];
+        }
+
+        if (!global_visited_outside.count(make_tuple(TYPE_P, i-1, j+1))){
+            global_visited_outside[make_tuple(TYPE_P, i-1, j+1)] = get_parentheses_outside_real_backtrace(i-1, j+1, bestP_beta[j+1][i-1], global_visited_outside, global_visited_inside, window_visited);
+        
+
+        }
+
+        auto outsider = global_visited_outside[make_tuple(TYPE_P, i-1, j+1)];
+
+        //the two () are at position i+1, j-1, not at i, j
+        global_visited_outside[make_tuple(TYPE_P, i, j)] = make_pair(outsider.first + '(', ')' + outsider.second);
+
+
+        window_fill(window_visited, i-1, j+1, seq_length, window_size);
+
+
+        return global_visited_outside[make_tuple(TYPE_P, i, j)];
+
+    }
+
+    else if (manner == MANNER_MULTI){
+
+        // p, i, j, q
+
+        if (global_visited_outside.count(make_tuple(TYPE_M2, i, j))){
+            return global_visited_outside[make_tuple(TYPE_M2, i, j)];
+        }
+
+
+        auto p = i - state_beta.trace.paddings.l1;
+        auto q = j + state_beta.trace.paddings.l2;
+
+        std::string left(state_beta.trace.paddings.l1-1, '.');
+        std::string right(state_beta.trace.paddings.l2-1,'.');
+
+
+        if (!global_visited_outside.count(make_tuple(TYPE_Multi, p, q))){
+            global_visited_outside[make_tuple(TYPE_Multi, p, q)] = get_parentheses_outside_real_backtrace(p, q, bestMulti_beta[q][p], global_visited_outside, global_visited_inside, window_visited);
+        }
+
+        auto outsider = global_visited_outside[make_tuple(TYPE_Multi, p, q)];
+
+        global_visited_outside[make_tuple(TYPE_M2,i,j)] = make_pair(outsider.first + left, right + outsider.second);
+
+        return global_visited_outside[make_tuple(TYPE_M2,i,j)];
+    }
+
+    else if (manner == MANNER_MULTI_eq_MULTI_plus_U){
+
+        // p , i , j , q
+
+        if (global_visited_outside.count(make_tuple(TYPE_Multi, i, j))) {
+            return global_visited_outside[make_tuple(TYPE_Multi, i, j)];
+        }
+
+
+        int j_next = j + state_beta.trace.split;
+
+        std::string right(state_beta.trace.split ,'.'); //this padding is not the same as others, we need to add '.' to replace the previous ')'.
+
+
+        if (!global_visited_outside.count(make_tuple(TYPE_Multi, i, j_next))){
+            global_visited_outside[make_tuple(TYPE_Multi, i, j_next)] = get_parentheses_outside_real_backtrace(i, j_next, bestMulti_beta[j_next][i], global_visited_outside, global_visited_inside, window_visited);
+        }
+
+        auto outsider = global_visited_outside[make_tuple(TYPE_Multi, i, j_next)];
+        global_visited_outside[make_tuple(TYPE_Multi, i, j)] = make_pair(outsider.first, right + outsider.second);
+        // can only add right to rightside. outsider.first, (?????? inside ?????????) , right + outsider.second
+        return global_visited_outside[make_tuple(TYPE_Multi, i, j)];
+
+    }
+
+    else if (manner == MANNER_P_eq_MULTI){
+
+        if (global_visited_outside.count(make_tuple(TYPE_Multi, i, j))){
+            return global_visited_outside[make_tuple(TYPE_Multi, i, j)];
+        }
+
+
+        if (!global_visited_outside.count(make_tuple(TYPE_P, i, j))){
+            global_visited_outside[make_tuple(TYPE_P, i, j)] = get_parentheses_outside_real_backtrace(i, j, bestP_beta[j][i], global_visited_outside, global_visited_inside, window_visited);
+        }
+
+        auto outsider = global_visited_outside[make_tuple(TYPE_P, i, j)];
+
+        global_visited_outside[make_tuple(TYPE_Multi, i, j)] = make_pair(outsider.first + '(', ')' + outsider.second);
+
+        window_fill(window_visited, i, j, seq_length, window_size);
+
+
+
+        return global_visited_outside[make_tuple(TYPE_Multi, i, j)];
+
+    }
+
+    else if (manner == MANNER_M2_eq_M_plus_P){
+
+        // M2 = M1 + P
+        // m, k=i-1,          i, j 
+
+        int mm, kk, ii, jj;
+
+        // M
+        // M2 = M1 + P, it is from M; we need M2 outside and P inside
+        if (state_beta.trace.split > j){
+            mm = i;
+            kk = j;
+            ii = j+1;
+            jj = state_beta.trace.split;
+
+
+            if (global_visited_outside.count(make_tuple(TYPE_M,mm,kk))){
+                return global_visited_outside[make_tuple(TYPE_M,mm,kk)];
+            }
+
+            if (!global_visited_inside.count(make_tuple(TYPE_P,ii,jj))){
+                global_visited_inside[make_tuple(TYPE_P,ii,jj)] = get_parentheses_inside_real_backtrace(ii, jj, bestP[jj][ii], global_visited_inside, window_visited);
+            }
+
+            auto P_inside = global_visited_inside[make_tuple(TYPE_P,ii,jj)];
+
+            if (!global_visited_outside.count(make_tuple(TYPE_M2,mm,jj))){
+                global_visited_outside[make_tuple(TYPE_M2,mm,jj)] = get_parentheses_outside_real_backtrace(mm, jj, bestM2_beta[jj][mm], global_visited_outside, global_visited_inside, window_visited);
+            }
+
+            auto outsider = global_visited_outside[make_tuple(TYPE_M2,mm,jj)];
+
+            global_visited_outside[make_tuple(TYPE_M,mm,kk)] = make_pair(outsider.first, P_inside + outsider.second);
+
+            return global_visited_outside[make_tuple(TYPE_M,mm,kk)];
+        }
+
+        // M2 = M + P, it is from P; we need M2 outside and M1 inside
+        else{
+            assert(state_beta.trace.split < i);
+            mm = state_beta.trace.split;
+            kk = i-1;
+            ii = i;
+            jj = j;
+
+            if (global_visited_outside.count(make_tuple(TYPE_P,ii,jj))){
+
+                return global_visited_outside[make_tuple(TYPE_P,ii,jj)];
+            }
+
+            if (!global_visited_inside.count(make_tuple(TYPE_M,mm,kk))){
+                global_visited_inside[make_tuple(TYPE_M,mm,kk)] = get_parentheses_inside_real_backtrace(mm, kk, bestM[kk][mm],global_visited_inside, window_visited);
+            }
+            auto M1_inside = global_visited_inside[make_tuple(TYPE_M,mm,kk)];
+
+            if (!global_visited_outside.count(make_tuple(TYPE_M2,mm,jj))){
+                global_visited_outside[make_tuple(TYPE_M2,mm,jj)] = get_parentheses_outside_real_backtrace(mm, jj, bestM2_beta[jj][mm], global_visited_outside, global_visited_inside, window_visited);
+            }
+
+            auto outsider = global_visited_outside[make_tuple(TYPE_M2,mm,jj)];
+
+            global_visited_outside[make_tuple(TYPE_P,ii,jj)] = make_pair(outsider.first +  M1_inside, outsider.second);
+
+
+            return global_visited_outside[make_tuple(TYPE_P,ii,jj)];
+
+        }
+
+    }
+
+    else if (manner == MANNER_M_eq_M2){
+
+        // M1 = M2
+        // Multi: M; M2: N; M1: m
+
+        if (global_visited_outside.count(make_tuple(TYPE_M2, i, j))) {
+            return global_visited_outside[make_tuple(TYPE_M2, i, j)];
+        }
+
+        if (!global_visited_outside.count(make_tuple(TYPE_M, i, j))) {
+            global_visited_outside[make_tuple(TYPE_M, i, j)] = get_parentheses_outside_real_backtrace(i, j, bestM_beta[j][i], global_visited_outside, global_visited_inside, window_visited);
+        }
+        
+        global_visited_outside[make_tuple(TYPE_M2, i, j)] = global_visited_outside[make_tuple(TYPE_M, i, j)];
+
+        return global_visited_outside[make_tuple(TYPE_M2, i, j)];
+
+    }
+
+    else if (manner == MANNER_M_eq_M_plus_U){
+        // Multi: M; M2: N; M1(M): m
+
+        if (global_visited_outside.count(make_tuple(TYPE_M,i,j))){
+            return global_visited_outside[make_tuple(TYPE_M,i,j)];
+        }
+
+        if (!global_visited_outside.count(make_tuple(TYPE_M,i,j+1))){
+            global_visited_outside[make_tuple(TYPE_M,i,j+1)] = get_parentheses_outside_real_backtrace(i, j+1, bestM_beta[j+1][i], global_visited_outside, global_visited_inside, window_visited);
+        }
+
+        auto outsider = global_visited_outside[make_tuple(TYPE_M,i,j+1)];
+
+        global_visited_outside[make_tuple(TYPE_M,i,j)] = make_pair(outsider.first, '.' + outsider.second);
+
+        return global_visited_outside[make_tuple(TYPE_M,i,j)];
+    }
+
+    else if (manner == MANNER_M_eq_P){
+
+        if (global_visited_outside.count(make_tuple(TYPE_P,i,j))){
+            return global_visited_outside[make_tuple(TYPE_P,i,j)];
+        }
+
+        if (!global_visited_outside.count(make_tuple(TYPE_M,i,j))) {
+            global_visited_outside[make_tuple(TYPE_M,i,j)] = get_parentheses_outside_real_backtrace(i, j, bestM_beta[j][i], global_visited_outside, global_visited_inside, window_visited);
+        }
+
+        global_visited_outside[make_tuple(TYPE_P, i, j)] = global_visited_outside[make_tuple(TYPE_M, i, j)];
+ 
+        return global_visited_outside[make_tuple(TYPE_P,i, j)];
+    }
+
+    else if (manner == MANNER_C_eq_C_plus_U){
+
+        assert(i == 0);
+        assert(j+1 != seq_length); //since it is even outside the base case, where base case is j + 1 == seq_length - 1
+
+
+        if (global_visited_outside.count(make_tuple(TYPE_C, i, j))){
+            return global_visited_outside[make_tuple(TYPE_C, i, j)];
+        }
+
+        if (!global_visited_outside.count(make_tuple(TYPE_C, i, j+1))){
+
+            if (j + 1 < seq_length - 1){ 
+                global_visited_outside[make_tuple(TYPE_C, i, j+1)] = get_parentheses_outside_real_backtrace(0, j+1, bestC_beta[j+1], global_visited_outside, global_visited_inside, window_visited);
+            }
+
+            else{
+                global_visited_outside[make_tuple(TYPE_C, i, j+1)] = make_pair("","");
+            }
+
+        }
+
+        auto outsider = global_visited_outside[make_tuple(TYPE_C, i, j+1)];
+
+        global_visited_outside[make_tuple(TYPE_C, i, j)] = make_pair(outsider.first, '.' + outsider.second);
+        
+        return global_visited_outside[make_tuple(TYPE_C, i, j)];
+    }
+
+    else if (manner == MANNER_C_eq_C_plus_P){
+
+        int kk, ii, jj;
+
+        //C = c + P, it is from P, we need C outside, and c inside
+        if (state_beta.trace.split == -1){
+            kk = i-1;
+            ii = i;
+            jj = j;
+
+            if (global_visited_outside.count(make_tuple(TYPE_P,ii,jj))) {
+                return global_visited_outside[make_tuple(TYPE_P,ii,jj)];
+            }
+
+            if (kk != -1){
+
+                if (!global_visited_inside.count(make_tuple(TYPE_C,0,kk))) {
+                    global_visited_inside[make_tuple(TYPE_C,0,kk)] = get_parentheses_inside_real_backtrace(0, kk, bestC[kk], global_visited_inside, window_visited);
+                }
+                
+                auto inside_C = global_visited_inside[make_tuple(TYPE_C,0,kk)];
+                
+                if (!global_visited_outside.count(make_tuple(TYPE_C,0,jj))) {
+
+                    if (jj < seq_length - 1){ 
+                        global_visited_outside[make_tuple(TYPE_C, 0, jj)] = get_parentheses_outside_real_backtrace(0, jj, bestC_beta[jj], global_visited_outside, global_visited_inside, window_visited);
+                    }
+
+                    else{
+                        global_visited_outside[make_tuple(TYPE_C, 0, jj)] = make_pair("","");
+                    }
+                }
+
+                auto outsider = global_visited_outside[make_tuple(TYPE_C,0,jj)];
+
+                global_visited_outside[make_tuple(TYPE_P, ii, jj)] = make_pair(outsider.first + inside_C, outsider.second);
+
+                return global_visited_outside[make_tuple(TYPE_P, ii, jj)];
+
+            }
+
+            else{
+                assert(ii == 0);
+
+                if (!global_visited_outside.count(make_tuple(TYPE_C,0,jj))) {
+
+                    if (jj < seq_length - 1){ 
+                        global_visited_outside[make_tuple(TYPE_C,0,jj)] = get_parentheses_outside_real_backtrace(0, jj, bestC_beta[jj], global_visited_outside, global_visited_inside, window_visited);
+                    }
+
+                    else{
+                        global_visited_outside[make_tuple(TYPE_C,0,jj)] = make_pair("","");
+                    }
+                }
+                global_visited_outside[make_tuple(TYPE_P, ii, jj)] = global_visited_outside[make_tuple(TYPE_C,0,jj)];
+
+
+                return global_visited_outside[make_tuple(TYPE_P, ii, jj)];
+
+            }
+
+        }
+
+        // C = c + P, it is from small c, we need C outside and P inside
+        else {
+            assert(i == 0);
+            assert(state_beta.trace.split != -1);
+
+            kk = j;
+            ii = j+1;
+            jj = state_beta.trace.split;
+
+
+            if (global_visited_outside.count(make_tuple(TYPE_C,0,kk))){
+                return global_visited_outside[make_tuple(TYPE_C,0,kk)];
+            }
+
+
+            if (!global_visited_inside.count(make_tuple(TYPE_P, ii, jj))) {
+                global_visited_inside[make_tuple(TYPE_P, ii, jj)] = get_parentheses_inside_real_backtrace(ii, jj, bestP[jj][ii], global_visited_inside, window_visited);
+
+            }
+            auto inside_P = global_visited_inside[make_tuple(TYPE_P, ii, jj)];
+
+
+            if (!global_visited_outside.count(make_tuple(TYPE_C,0,jj))){
+
+                if (jj < seq_length - 1){ 
+                    global_visited_outside[make_tuple(TYPE_C,0,jj)] = get_parentheses_outside_real_backtrace(0, jj, bestC_beta[jj], global_visited_outside, global_visited_inside, window_visited);
+                }
+
+                else{
+                    global_visited_outside[make_tuple(TYPE_C,0,jj)] = make_pair("","");
+                }
+
+            }
+
+            auto outsider = global_visited_outside[make_tuple(TYPE_C,0,jj)];
+
+
+            global_visited_outside[make_tuple(TYPE_C,0,kk)] = make_pair(outsider.first, inside_P + outsider.second);
+
+            return global_visited_outside[make_tuple(TYPE_C,0,kk)];
+
+        }
+
+    }
+
+    else {
+        printf("wrong manner outside at %d, %d: manner %d\n", i, j, state_beta.manner); fflush(stdout);
+        assert(false);
+    }
+
+}
+
+
 void BeamCKYParser::prepare(unsigned len) {
     seq_length = len;
 
@@ -1039,7 +1707,6 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
                 ++ nos_C;
             }
         }
-        //printf("C at %d\n", j); fflush(stdout);
 
     }  // end of for-loo j
 
@@ -1060,17 +1727,455 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
 
     fflush(stdout);
 
+
+
+    if (zuker){
+
+        #ifdef lv
+            double printscore = (viterbi.score / -100.0);
+        #else
+            double printscore = viterbi.score;
+        #endif
+
+        printf("%s (%.2f)\n", string(result).c_str(), printscore);
+
+        printf("Zuker suboptimal structures...\n");
+
+        if (seq_length < 500)
+            window_size = 2;
+
+        else if (seq_length < 1200)
+            window_size = 5;
+
+        else if (seq_length < 2000)
+            window_size = 7;
+
+        else if (seq_length < 5000)
+            window_size = 9;
+
+        else
+            window_size = 12;
+
+
+        bestP_beta.clear();
+        bestP_beta.resize(seq_length);
+        bestM2_beta.clear();
+        bestM2_beta.resize(seq_length);
+        bestM_beta.clear();
+        bestM_beta.resize(seq_length);
+        bestC_beta.clear();
+        bestC_beta.resize(seq_length);
+        bestMulti_beta.clear();
+        bestMulti_beta.resize(seq_length);
+
+        
+        outside(next_pair);      
+        
+        bool sorted_P = true;
+
+        map<tuple<char, int, int>, string> visited; // this is for recording the structure to bottom for a specific P, C,... at i,j
+
+        clock_t startTime;
+        startTime = clock();
+
+
+        // state P is sorted
+        vector<tuple<value_type, int, int> > sorted_bestP_beta;
+        map<tuple<BestTypes, int, int>, pair<string, string> > global_visited_outside;
+        map<tuple<BestTypes, int, int>, string> global_visited_inside;
+        set<pair<int,int> > window_visited;
+
+
+        for(int j = 0; j < seq_length; ++j) {
+            for (auto & i_elem : bestP_beta[j]){
+
+                auto i = i_elem.first;
+
+                if (bestP_beta[j][i].manner == 0) continue;
+
+
+                value_type alpha_inside = bestP[j][i].score;
+                value_type beta_outside = bestP_beta[j][i].score;
+
+
+            #ifdef lv
+                if (abs(alpha_inside + beta_outside - float(viterbi.score))/100. > zuker_energy_delta)
+            #else
+                if (abs(alpha_inside + beta_outside - float(viterbi.score)) > zuker_energy_delta)
+            #endif
+                {
+                    continue;
+                }
+
+                sorted_bestP_beta.push_back(make_tuple(-(alpha_inside + beta_outside), i, j));
+            }
+        }
+
+        sort(sorted_bestP_beta.begin(), sorted_bestP_beta.end(), cmp);
+
+        int count = 0;
+
+        int num_outputs = 0;
+
+        for (auto & item : sorted_bestP_beta){
+    
+            auto i = get<1>(item);
+            auto j = get<2>(item);
+
+            auto best_P_ij_outside = bestP_beta[j][i];
+
+            auto best_P_ij_inside = bestP[j][i];
+
+            if (window_visited.find(make_pair(i,j)) != window_visited.end()) {
+                count += 1;
+                continue;
+            }
+
+            visited.clear();
+
+            window_fill(window_visited, i, j, seq_length, window_size);
+
+            auto outsider =  get_parentheses_outside_real_backtrace(i, j, best_P_ij_outside, global_visited_outside, global_visited_inside, window_visited);
+
+            global_visited_outside[make_tuple(TYPE_P, i, j)] = outsider;
+
+            auto insider =  get_parentheses_inside_real_backtrace(i, j, best_P_ij_inside, global_visited_inside, window_visited);
+
+            global_visited_inside[make_tuple(TYPE_P, i, j)] = insider;
+
+            auto second_string = outsider.first + insider + outsider.second;
+
+            num_outputs+=1;
+            if (num_outputs > 10000 && seq_length > 20000)
+                break;
+
+            #ifdef lv
+                printf("%s (%.2f)\n", second_string.c_str(), (bestP[j][i].score + bestP_beta[j][i].score)/(-100.));
+            #else
+                printf("%s (%.2f)\n", second_string.c_str(), bestP[j][i].score + bestP_beta[j][i].score);
+
+            #endif
+
+        }
+
+    }
+
     return {string(result), viterbi.score, nos_tot, parse_elapsed_time};
 }
+
+
+void BeamCKYParser::outside(vector<int> next_pair[]){
+      
+    struct timeval parse_starttime, parse_endtime;
+
+    gettimeofday(&parse_starttime, NULL);
+
+    bestC_beta[seq_length-1].score = 0.0;
+    bestC_beta[seq_length-1].manner = MANNER_NONE;
+    // from right to left
+    value_type newscore;
+    for(int j = seq_length-1; j >= 0; --j) {
+        int nucj = nucs[j];
+        int nucj1 = (j+1) < seq_length ? nucs[j+1] : -1;
+
+
+        // important otherwise cannot iterate    
+        unordered_map<int, State>& beamstepH = bestH[j];
+        unordered_map<int, State>& beamstepMulti = bestMulti[j];
+        unordered_map<int, State>& beamstepP = bestP[j];
+        unordered_map<int, State>& beamstepM2 = bestM2[j];
+        unordered_map<int, State>& beamstepM = bestM[j];
+        State& beamstepC = bestC[j];
+
+
+        unordered_map<int, State>& beamstepH_beta = bestH_beta[j];
+        unordered_map<int, State>& beamstepMulti_beta = bestMulti_beta[j];
+        unordered_map<int, State>& beamstepP_beta = bestP_beta[j];
+        unordered_map<int, State>& beamstepM2_beta = bestM2_beta[j];
+        unordered_map<int, State>& beamstepM_beta = bestM_beta[j];
+        State& beamstepC_beta = bestC_beta[j];
+
+
+        // beam of C
+        {
+            // C = C + U
+            if (j < seq_length-1) {
+
+#ifdef lv
+                update_if_better(beamstepC_beta, bestC_beta[j+1].score, MANNER_C_eq_C_plus_U);           
+#else
+                newscore = score_external_unpaired(j+1, j+1);
+                update_if_better(beamstepC_beta, bestC_beta[j+1].score + newscore, MANNER_C_eq_C_plus_U);
+
+#endif
+            }
+        }
+
+        if (j == 0) break; //for updating bestC_beta[0], then break need: for(int j = seq_length-1; |||||j >= 0||||; --j) {
+    
+        // beam of M
+        {
+            for(auto& item : beamstepM) {
+
+                int i = item.first;
+                State& state = beamstepM_beta[i];
+
+
+                if (j < seq_length-1) {
+#ifdef lv            
+                    if (bestM_beta[j+1][i].manner != 0){
+                        update_if_better(state, bestM_beta[j+1][i].score, MANNER_M_eq_M_plus_U);
+                    }
+#else
+                    if (bestM_beta[j+1][i].manner != 0){
+                        newscore = score_multi_unpaired(j + 1, j + 1);
+                        update_if_better(state, bestM_beta[j+1][i].score + newscore, MANNER_M_eq_M_plus_U);
+                    }
+#endif
+                }
+            }
+        }
+
+        // beam of M2
+        {
+            for(auto& item : beamstepM2) {
+                int i = item.first;
+                State& state = beamstepM2_beta[i];
+
+                // 1. multi-loop
+                {
+                    for (int p = i-1; p >= std::max(i - SINGLE_MAX_LEN, 0); --p) {
+                        int nucp = nucs[p];
+                        int q = next_pair[nucp][j];
+                        if (q != -1 && ((i - p - 1) <= SINGLE_MAX_LEN)) {
+#ifdef lv
+                            if (bestMulti_beta[q][p].manner != 0){
+                                update_if_better(state, bestMulti_beta[q][p].score, MANNER_MULTI, static_cast<char>(i - p), q - j);
+                            }
+#else
+     
+                            if (bestMulti_beta[q][p].manner != 0){
+                                newscore = score_multi_unpaired(p+1, i-1) + score_multi_unpaired(j+1, q-1);
+                                update_if_better(state, bestMulti_beta[q][p].score + newscore, MANNER_MULTI, static_cast<char>(i - p), q - j);
+                            }
+#endif
+                        }
+                    }
+                }
+
+                // 2. M = M2
+                if (beamstepM_beta[i].manner != 0){
+                    update_if_better(state, beamstepM_beta[i].score, MANNER_M_eq_M2);
+                }
+            }
+        }
+        // beam of P
+        {  
+            for(auto& item : beamstepP) {
+                int i = item.first;
+                State& state = beamstepP_beta[i];
+                auto state_alpha = item.second.score; //for subopt zuker
+
+
+                int nuci = nucs[i];
+                int nuci_1 = (i-1>-1) ? nucs[i-1] : -1;
+
+                if (i >0 && j<seq_length-1) {
+#ifndef lv
+                    value_type precomputed = score_junction_B(j, i, nucj, nucj1, nuci_1, nuci);
+#endif
+                    for (int p = i - 1; p >= std::max(i - SINGLE_MAX_LEN, 0); --p) {
+                        int nucp = nucs[p];
+                        int nucp1 = nucs[p + 1]; 
+                        int q = next_pair[nucp][j];
+
+                        while (q != -1 && ((i - p) + (q - j) - 2 <= SINGLE_MAX_LEN)) {
+                            int nucq = nucs[q];
+                            int nucq_1 = nucs[q - 1];
+
+                            if (p == i - 1 && q == j + 1) {
+                                // helix
+#ifdef lv
+                                
+                                if (bestP_beta[q][p].manner != 0){
+                                    int score_single = -v_score_single(p,q,i,j, nucp, nucp1, nucq_1, nucq, nuci_1, nuci, nucj, nucj1);
+                                    update_if_better(state, (bestP_beta[q][p].score + score_single), MANNER_HELIX, static_cast<char>(i - p), q - j);
+                                }
+#else
+                                if (bestP_beta[q][p].manner != 0){    
+                                    newscore = score_helix(nucp, nucp1, nucq_1, nucq);
+                                    update_if_better(state, bestP_beta[q][p].score + newscore, MANNER_HELIX, static_cast<char>(i - p), q - j);
+                                }
+
+#endif
+                            } else {
+                                // single branch
+#ifdef lv
+                                if  (bestP_beta[q][p].manner != 0){   
+                                    int score_single = - v_score_single(p,q,i,j, nucp, nucp1, nucq_1, nucq, nuci_1, nuci, nucj, nucj1);
+                                    update_if_better(state, (bestP_beta[q][p].score + score_single), MANNER_SINGLE, static_cast<char>(i - p), q - j);
+                                }
+#else
+                                if (bestP_beta[q][p].manner != 0){    
+                                    newscore = score_junction_B(p, q, nucp, nucp1, nucq_1, nucq) + precomputed + score_single_without_junctionB(p, q, i, j, nuci_1, nuci, nucj, nucj1);
+                                    update_if_better(state, bestP_beta[q][p].score + newscore, MANNER_SINGLE, static_cast<char>(i - p), q - j);
+                                }
+
+#endif
+                            }
+                            q = next_pair[nucp][q]; //beam search, q is not a key in bestP_beta[q], does not mean new q is not a key
+                        }
+                    }
+                }
+
+                // assert(check());
+
+                // 2. M = P
+                if(i > 0 && j < seq_length-1){
+
+#ifdef lv
+                        if (beamstepM_beta[i].manner != 0){
+                            int score_M1 = - v_score_M1(i, j, j, nuci_1, nuci, nucj, nucj1, seq_length);
+                            update_if_better(state, (beamstepM_beta[i].score + score_M1), MANNER_M_eq_P);
+                        }
+#else
+                        if (beamstepM_beta[i].manner != 0){    
+                            newscore = score_M1(i, j, j, nuci_1, nuci, nucj, nucj1, seq_length);
+                            update_if_better(state, beamstepM_beta[i].score + newscore, MANNER_M_eq_P);
+                        }
+#endif
+                }
+                // 3. M2 = M + P
+                int k = i - 1;
+                if ( k > 0 && !bestM[k].empty()) {
+#ifdef lv
+                    int M1_score = - v_score_M1(i, j, j, nuci_1, nuci, nucj, nucj1, seq_length);
+                    float m1_alpha = M1_score;
+#else
+                    newscore = score_M1(i, j, j, nuci_1, nuci, nucj, nucj1, seq_length);
+                    float m1_alpha = newscore;
+#endif
+                    
+                    float m1_plus_P_alpha = state_alpha + m1_alpha;
+                    for (auto &m : bestM[k]) {
+                        int newi = m.first;
+                        State& m_state = bestM_beta[k][newi];
+
+                        auto m_state_alpha = m.second.score;
+                        if (beamstepM2_beta[newi].manner != 0){
+                            update_if_better(m_state, (beamstepM2_beta[newi].score + m1_plus_P_alpha), MANNER_M2_eq_M_plus_P, j); //newi, k = i-1, i, j
+                            update_if_better(state, (beamstepM2_beta[newi].score + m_state_alpha + m1_alpha), MANNER_M2_eq_M_plus_P, newi); // newi, k = i-1, i, j
+                        }
+                    }
+                }
+                // 4. C = C + P
+                {   
+                    int k = i - 1;
+                    if (k >= 0) {
+                        int nuck = nuci_1;
+                        int nuck1 = nuci;
+
+#ifdef lv
+                        int score_external_paired = - v_score_external_paired(k+1, j, nuck, nuck1,
+                                                                 nucj, nucj1, seq_length);
+
+                        float external_paired_alpha_plus_beamstepC_beta = beamstepC_beta.score + score_external_paired;
+
+#else
+                        newscore = score_external_paired(k+1, j, nuck, nuck1, nucj, nucj1, seq_length);
+                        float external_paired_alpha_plus_beamstepC_beta = beamstepC_beta.score + newscore;
+#endif
+
+                        update_if_better(bestC_beta[k], state_alpha + external_paired_alpha_plus_beamstepC_beta, MANNER_C_eq_C_plus_P, j); //0, k, i, j
+                        update_if_better(state, bestC[k].score + external_paired_alpha_plus_beamstepC_beta, MANNER_C_eq_C_plus_P, -1); // 0, k, i, j
+
+                    } else {
+
+#ifdef lv
+                        int score_external_paired = - v_score_external_paired(0, j, -1, nucs[0],
+                                                                 nucj, nucj1, seq_length);
+                        update_if_better(state, (beamstepC_beta.score + score_external_paired), MANNER_C_eq_C_plus_P, -1); //C does not exist
+#else
+                        newscore = score_external_paired(0, j, -1, nucs[0],
+                                                             nucj, nucj1, seq_length);
+                        update_if_better(state, beamstepC_beta.score + newscore, MANNER_C_eq_C_plus_P, -1); //C does not exist
+
+#endif
+                    }
+                }
+            }
+        }
+
+        // beam of Multi
+        {
+            for(auto& item : beamstepMulti) {
+                int i = item.first;
+                State& state = beamstepMulti_beta[i];
+
+                int nuci = nucs[i];
+                int nuci1 = nucs[i+1];
+                int jnext = next_pair[nuci][j];
+
+                // 1. extend (i, j) to (i, jnext)
+                {
+
+
+
+                    if (jnext != -1) {
+
+#ifdef lv
+                        if (bestMulti_beta[jnext][i].manner != 0){
+                            update_if_better(state, (bestMulti_beta[jnext][i].score), MANNER_MULTI_eq_MULTI_plus_U, jnext - j);
+                        }
+#else
+                        if (bestMulti_beta[jnext][i].manner != 0){
+                            newscore = score_multi_unpaired(j, jnext - 1);
+                            update_if_better(state, bestMulti_beta[jnext][i].score + newscore, MANNER_MULTI_eq_MULTI_plus_U, jnext - j);
+                        }
+#endif
+                    }
+                }
+
+                // 2. generate P (i, j)
+                {
+#ifdef lv
+                    if (beamstepP_beta[i].manner != 0){
+                        int score_multi = - v_score_multi(i, j, nuci, nuci1, nucs[j-1], nucj, seq_length);
+                        update_if_better(state, (beamstepP_beta[i].score + score_multi), MANNER_P_eq_MULTI);
+                    }
+#else    
+                    if (beamstepP_beta[i].manner != 0){
+                        newscore = score_multi(i, j, nuci, nuci1, nucs[j-1], nucj, seq_length);
+                        update_if_better(state, beamstepP_beta[i].score + newscore, MANNER_P_eq_MULTI);
+                    }
+
+#endif
+                }
+            }
+        }
+        
+
+
+    }  // end of for-loo j
+
+    return;
+}
+
+
+
 
 BeamCKYParser::BeamCKYParser(int beam_size,
                              bool nosharpturn,
                              bool verbose,
-                             bool constraints)
+                             bool constraints,
+                             bool zuker_subopt,
+                             float energy_delta)
     : beam(beam_size), 
       no_sharp_turn(nosharpturn), 
       is_verbose(verbose),
-      use_constraints(constraints){
+      use_constraints(constraints),
+      zuker(zuker_subopt),
+      zuker_energy_delta(energy_delta){
 #ifdef lv
         initialize();
 #else
@@ -1089,6 +2194,8 @@ int main(int argc, char** argv){
     bool is_verbose = false;
     bool is_eval = false;
     bool is_constraints = false; // lisiz, add constraints
+    bool zuker_subopt = false;
+    float energy_delta = 5.0;
 
     if (argc > 1) {
         beamsize = atoi(argv[1]);
@@ -1096,7 +2203,15 @@ int main(int argc, char** argv){
         is_verbose = atoi(argv[3]) == 1;
         is_eval = atoi(argv[4]) == 1; // adding eval mode
         is_constraints = atoi(argv[5]) == 1; // lisiz, add constraints
+        zuker_subopt = atoi(argv[6]) == 1;
+        energy_delta = atof(argv[7]);
     }
+
+    if (is_constraints && zuker_subopt){
+        printf("In constraint mode, Zuker suboptimal is disabled!\n");
+        zuker_subopt = false;
+    }
+
 
     // variables for decoding
     int num=0, total_len = 0;
@@ -1292,7 +2407,7 @@ int main(int argc, char** argv){
                 replace(seq.begin(), seq.end(), 'T', 'U');
 
                 // lhuang: moved inside loop, fixing an obscure but crucial bug in initialization
-                BeamCKYParser parser(beamsize, !sharpturn, is_verbose);
+                BeamCKYParser parser(beamsize, !sharpturn, is_verbose, false, zuker_subopt, energy_delta);
 
                 BeamCKYParser::DecoderResult result = parser.parse(seq, NULL);
 
@@ -1301,8 +2416,9 @@ int main(int argc, char** argv){
         #else
                 double printscore = result.score;
         #endif
-                printf("%s (%.2f)\n", result.structure.c_str(), printscore);
-
+                if (!zuker_subopt){
+                    printf("%s (%.2f)\n", result.structure.c_str(), printscore);
+                }
                 ++num;
                 total_len += seq.length();
                 total_score += result.score;
