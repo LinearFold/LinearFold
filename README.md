@@ -114,7 +114,7 @@ GAACCCCGUCAGGUCCGGAAGGAAGCAGCGGUAAGU
 .....(((.......)))(.....((....))...) (3.70)
 ```
 
-## Example Run Predict with suboptimal structures
+## Example Run Predict and output suboptimal structures
 ```
 echo GCCUGGUGACCAUAGCGAGUCGGUACCACCCCUUCCCAUCCCGAACAGGACCGUGAAACGACUCCGCGCCGAUGAUAGUGCGGAUUCCCGUGUGAAAGUAGGUCAUCGCCAGGC | ./linearfold -V --zuker --delta 2.0
 (((((((((.....((((((((....(((.(((((.......))..)))...)))...)))))).))(((.........((((....)))).........)))..))))))))) (-35.50)
