@@ -72,7 +72,7 @@ output Zuker suboptimal structures, (DEFAULT=FALSE)
 ```
 --delta
 ```
-output Zuker suboptimal structures with score or energy(-V, kcal/mol) in a centain range of the optimum, (DEFAULT=5.0)
+compute Zuker suboptimal structures with scores or energies(-V, kcal/mol) in a centain range of the optimum, (DEFAULT=5.0)
 
 
 

@@ -15,7 +15,7 @@ def setgflags():
     flags.DEFINE_boolean('eval', False, "print out energy of a given structure, (DEFAULT=FALSE)") # adding eval mode
     flags.DEFINE_boolean('constraints', False, "print out energy of a given structure, (DEFAULT=FALSE)") # adding eval mode
     flags.DEFINE_boolean('zuker', False, "output Zuker suboptimal structures, (DEFAULT=FALSE)")
-    flags.DEFINE_float('delta', 5.0, "output Zuker suboptimal structures with score or energy(-V, kcal/mol) in a centain range of the optimum, (DEFAULT=5.0)")
+    flags.DEFINE_float('delta', 5.0, "compute Zuker suboptimal structures with scores or energies(-V, kcal/mol) in a centain range of the optimum, (DEFAULT=5.0)")
     argv = FLAGS(sys.argv)
 
 def main():
