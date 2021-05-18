@@ -64,6 +64,18 @@ Enable adding specific constraints in prediction (default False).
 The constraint sequence should have the same length as the RNA sequence. 
 "? . ( )" indicates a position for which the proper matching is unknown, unpaired, left or right parenthesis respectively. The parentheses must be well-banlanced and non-crossing.
 
+```
+--zuker
+```
+output Zuker suboptimal structures, (DEFAULT=FALSE)
+
+```
+--delta
+```
+output Zuker suboptimal structures with score or energy(-V, kcal/mol) in a centain range of the optimum, (DEFAULT=5.0)
+
+
+
 ## To Visualize 
 LinearFold is able to visualize the structure using a circular plot.
 
