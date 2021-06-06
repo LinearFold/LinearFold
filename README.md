@@ -150,7 +150,7 @@ Zuker suboptimal structures...
 (((((((((.......((((((....(((.(((((.......))..)))...)))...))))))(((((........))))).....((...........))...))))))))) (-33.60)
 ```
 
-## Example Run Predict and output suboptimal structures
+## Example Run SHAPE-guided structure prediction
 ```
 echo GCCUGGUGACCAUAGCGAGUCGGUACCACCCCUUCCCAUCCCGAACAGGACCGUGAAACGACUCCGCGCCGAUGAUAGUGCGGAUUCCCGUGUGAAAGUAGGUCAUCGCCAGGC | ./linearfold -V --shape example.shape
 GCCUGGUGACCAUAGCGAGUCGGUACCACCCCUUCCCAUCCCGAACAGGACCGUGAAACGACUCCGCGCCGAUGAUAGUGCGGAUUCCCGUGUGAAAGUAGGUCAUCGCCAGGC
