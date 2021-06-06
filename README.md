@@ -75,6 +75,11 @@ output Zuker suboptimal structures, (DEFAULT=FALSE)
 compute Zuker suboptimal structures with scores or energies(-V, kcal/mol) in a centain range of the optimum, (DEFAULT=5.0)
 
 
+```
+--shape <filename>
+```
+use SHAPE reactivity data to guide structure predictions
+
 
 ## To Visualize 
 LinearFold is able to visualize the structure using a circular plot.
@@ -144,6 +149,14 @@ Zuker suboptimal structures...
 (((((((((.....((((((((....(((.........(((......)))..)))...)))))).))(((.........((((....)))).........)))..))))))))) (-33.70)
 (((((((((.......((((((....(((.(((((.......))..)))...)))...))))))(((((........))))).....((...........))...))))))))) (-33.60)
 ```
+
+## Example Run Predict and output suboptimal structures
+```
+echo GCCUGGUGACCAUAGCGAGUCGGUACCACCCCUUCCCAUCCCGAACAGGACCGUGAAACGACUCCGCGCCGAUGAUAGUGCGGAUUCCCGUGUGAAAGUAGGUCAUCGCCAGGC | ./linearfold -V --shape example.shape
+GCCUGGUGACCAUAGCGAGUCGGUACCACCCCUUCCCAUCCCGAACAGGACCGUGAAACGACUCCGCGCCGAUGAUAGUGCGGAUUCCCGUGUGAAAGUAGGUCAUCGCCAGGC
+((((((........((((((((.(((............(((......)))..)))...))))).)))..(((((((..(((...(((......))).))).))))))))))))) (-66.30)
+```
+
 
 ## Example Run Eval
 ```

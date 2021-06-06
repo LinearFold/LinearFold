@@ -1454,6 +1454,12 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
                                     newscore = -v_score_single(p,q,i,j, nucp, nucp1, nucq_1, nucq,
                                                              nuci_1, nuci, nucj, nucj1)
                                         + state.score;
+                                    // SHAPE for Vienna only
+                                    if (use_shape)
+                                    {
+                                        newscore += -(pseudo_energy_stack[p] + pseudo_energy_stack[i] + pseudo_energy_stack[j] + pseudo_energy_stack[q]);
+                                    }
+
 #else
                                     newscore = score_helix(nucp, nucp1, nucq_1, nucq) + state.score;
 #endif
@@ -1999,6 +2005,13 @@ void BeamCKYParser::outside(vector<int> next_pair[]){
                                 
                                 if (bestP_beta[q][p].manner != 0){
                                     int score_single = -v_score_single(p,q,i,j, nucp, nucp1, nucq_1, nucq, nuci_1, nuci, nucj, nucj1);
+                                    
+                                    // SHAPE for Vienna only
+                                    if (use_shape)
+                                    {
+                                        score_single += -(pseudo_energy_stack[p] + pseudo_energy_stack[i] + pseudo_energy_stack[j] + pseudo_energy_stack[q]);
+                                    }
+
                                     update_if_better(state, (bestP_beta[q][p].score + score_single), MANNER_HELIX, static_cast<char>(i - p), q - j);
                                 }
 #else
@@ -2169,7 +2182,8 @@ BeamCKYParser::BeamCKYParser(int beam_size,
                              bool verbose,
                              bool constraints,
                              bool zuker_subopt,
-                             float energy_delta)
+                             float energy_delta,
+                             string shape_file_path)
     : beam(beam_size), 
       no_sharp_turn(nosharpturn), 
       is_verbose(verbose),
@@ -2182,6 +2196,49 @@ BeamCKYParser::BeamCKYParser(int beam_size,
         initialize();
         initialize_cachesingle();
 #endif
+
+    // SHAPE
+
+    if (shape_file_path != ""){
+
+        use_shape = true;
+        int position;
+        string data;
+
+        double temp_after_mb_shape;
+
+        ifstream in(shape_file_path);
+
+        if (!in.good()){
+            printf("Reading SHAPE file error!\n");
+            assert(false);
+        }
+
+
+        while (!(in >> position >> data).fail()) {
+            assert(int(position) == SHAPE_data.size() + 1);
+
+            if (isdigit(int(data[0])) == 0){
+                SHAPE_data.push_back(double((-1.000000)));
+            }
+
+            else {
+                SHAPE_data.push_back(stod(data));
+            }
+        }
+
+
+        for (int i = 0; i<SHAPE_data.size(); i++){
+            temp_after_mb_shape = SHAPE_data[i] < 0 ? 0. : (m * log(SHAPE_data[i] + 1) + b);
+
+            pseudo_energy_stack.push_back((int)roundf(temp_after_mb_shape * 100.));
+
+            assert(pseudo_energy_stack.size() == i + 1 );
+
+        }
+
+    }
+
 }
 
 
@@ -2196,6 +2253,8 @@ int main(int argc, char** argv){
     bool is_constraints = false; // lisiz, add constraints
     bool zuker_subopt = false;
     float energy_delta = 5.0;
+    string shape_file_path = "";
+
 
     if (argc > 1) {
         beamsize = atoi(argv[1]);
@@ -2205,11 +2264,17 @@ int main(int argc, char** argv){
         is_constraints = atoi(argv[5]) == 1; // lisiz, add constraints
         zuker_subopt = atoi(argv[6]) == 1;
         energy_delta = atof(argv[7]);
+        shape_file_path = argv[8];
     }
 
     if (is_constraints && zuker_subopt){
         printf("In constraint mode, Zuker suboptimal is disabled!\n");
         zuker_subopt = false;
+    }
+
+    if (is_constraints && shape_file_path != ""){
+        printf("In constraint mode, SHAPE-guided structure prediction feature is disabled!\n");
+        shape_file_path = "";
     }
 
 
@@ -2407,7 +2472,7 @@ int main(int argc, char** argv){
                 replace(seq.begin(), seq.end(), 'T', 'U');
 
                 // lhuang: moved inside loop, fixing an obscure but crucial bug in initialization
-                BeamCKYParser parser(beamsize, !sharpturn, is_verbose, false, zuker_subopt, energy_delta);
+                BeamCKYParser parser(beamsize, !sharpturn, is_verbose, false, zuker_subopt, energy_delta, shape_file_path);
 
                 BeamCKYParser::DecoderResult result = parser.parse(seq, NULL);
 

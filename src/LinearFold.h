@@ -134,6 +134,15 @@ public:
     float zuker_energy_delta;
 
 
+    bool use_shape = false;
+
+
+    double m = 1.8;
+    double b = -0.6;
+
+
+
+
     struct DecoderResult {
         std::string structure;
         value_type score;
@@ -149,7 +158,8 @@ public:
                   bool is_verbose=false,
                   bool is_constraints=false,
                   bool zuker_subopt=false,
-                  float zuker_energy_delta=5.0); // lisiz, add constraints
+                  float zuker_energy_delta=5.0,
+                  std::string shape_file_path=""); // lisiz, add constraints
 
     // DecoderResult parse(std::string& seq);
     DecoderResult parse(std::string& seq, std::vector<int>* cons);
@@ -192,6 +202,15 @@ private:
 
 
     std::vector<int> nucs;
+
+
+
+    // SHAPE
+    std::vector<double> SHAPE_data;
+
+    std::vector<int> pseudo_energy_stack;
+
+
 
     // void prepare(unsigned len);
 

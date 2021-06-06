@@ -16,6 +16,7 @@ def setgflags():
     flags.DEFINE_boolean('constraints', False, "print out energy of a given structure, (DEFAULT=FALSE)") # adding eval mode
     flags.DEFINE_boolean('zuker', False, "output Zuker suboptimal structures, (DEFAULT=FALSE)")
     flags.DEFINE_float('delta', 5.0, "compute Zuker suboptimal structures with scores or energies(-V, kcal/mol) in a centain range of the optimum, (DEFAULT=5.0)")
+    flags.DEFINE_string('shape', '', "use SHAPE reactivity data to guide structure predictions") # SHAPE
     argv = FLAGS(sys.argv)
 
 def main():
@@ -28,8 +29,12 @@ def main():
     zuker_subopt = '1' if FLAGS.zuker else '0'
     delta = str(FLAGS.delta)
 
+    # SHAPE
+    shape_file_path = str(FLAGS.shape)
+
+
     path = os.path.dirname(os.path.abspath(__file__))
-    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval, is_constraints, zuker_subopt, delta]
+    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval, is_constraints, zuker_subopt, delta, shape_file_path]
     subprocess.call(cmd, stdin=sys.stdin)
     
 if __name__ == '__main__':
