@@ -78,7 +78,7 @@ compute Zuker suboptimal structures with scores or energies(-V, kcal/mol) in a c
 ```
 --shape <filename>
 ```
-use SHAPE reactivity data to guide structure predictions\\
+use SHAPE reactivity data to guide structure predictions  
 Please refer to this link for the SHAPE data format:
 https://rna.urmc.rochester.edu/Text/File_Formats.html#SHAPE
 
