@@ -13,11 +13,8 @@
 #include <limits>
 #include <vector>
 #include <unordered_map>
-//#include <stdint.h>
 
 #define MIN_CUBE_PRUNING_SIZE 20
-
-// #define lv
 
 #ifdef lv
   typedef int value_type;
@@ -40,12 +37,9 @@ enum Manner {
   MANNER_M_eq_M2,               // 9: M = M2
   MANNER_M_eq_M_plus_U,         // 10: M = M + U
   MANNER_M_eq_P,                // 11: M = P
-  /* MANNER_C_eq_U, */
-  /* MANNER_C_eq_P, */
   MANNER_C_eq_C_plus_U,     // 12: C = C + U
   MANNER_C_eq_C_plus_P,     // 13: C = C + P
 };
-
 
 enum BestTypes {
   TYPE_C = 0,
@@ -55,7 +49,6 @@ enum BestTypes {
   TYPE_Multi,
   TYPE_M2,
 };
-
 
 bool cmp(const std::tuple<value_type, int, int>& a, const std::tuple<value_type, int, int>& b) 
 { 
@@ -67,7 +60,6 @@ bool cmp(const std::tuple<value_type, int, int>& a, const std::tuple<value_type,
 
 } 
 
-
 void window_fill(std::set<std::pair<int,int> >& window_visited, const int i, const int j, const int seq_length, const int window_size){
 
     for (int ii = std::max(0,i-window_size); ii <= std::min(seq_length-1, i+window_size); ++ii){
@@ -77,12 +69,8 @@ void window_fill(std::set<std::pair<int,int> >& window_visited, const int i, con
             }
         }
     }
-
     return;
 }
-
-
-
 
 struct State {
     // double score;
@@ -120,28 +108,15 @@ struct State {
 class BeamCKYParser {
 public:
     int beam;
-
-    // int nos_set_update = 0;
-
-    // bool use_vienna;
-    // bool is_candidate_list;
-    // bool is_cube_pruning;
     bool no_sharp_turn;
     bool is_verbose;
     bool use_constraints; // lisiz, add constraints
     bool zuker;
     int  window_size; //2 + 1 + 2 = 5 in total, 5*5 window size.
     float zuker_energy_delta;
-
-
     bool use_shape = false;
-
-
     double m = 1.8;
     double b = -0.6;
-
-
-
 
     struct DecoderResult {
         std::string structure;
@@ -171,7 +146,6 @@ private:
     std::pair<std::string, std::string> get_parentheses_outside_real_backtrace(int i, int j, State& state_beta, std::map<std::tuple<BestTypes, int, int>, std::pair<std::string, std::string> >& global_visited_outside, std::map<std::tuple<BestTypes, int, int>, std::string>& global_visited_inside, std::set<std::pair<int,int> >& window_visited);
     std::string get_parentheses_inside_real_backtrace(int i, int j, State& state, std::map<std::tuple<BestTypes, int, int>, std::string>& global_visited_inside, std::set<std::pair<int,int> >& window_visited);
 
-
     unsigned seq_length;
 
     std::vector<std::unordered_map<int, State>> bestH, bestP, bestM2, bestMulti, bestM;
@@ -195,24 +169,16 @@ private:
     void sortM(value_type threshold,
                std::unordered_map<int, State> &beamstep,
                std::vector<std::pair<value_type, int>>& sorted_stepM);
-
     std::vector<State> bestC;
-    //Zuker subopt
-    std::vector<State> bestC_beta;
-
-
     std::vector<int> nucs;
 
-
-
+    //Zuker subopt
+    std::vector<State> bestC_beta;
+    
     // SHAPE
     std::vector<double> SHAPE_data;
-
     std::vector<int> pseudo_energy_stack;
 
-
-
-    // void prepare(unsigned len);
 
     // lisiz: constraints
     std::vector<int> allow_unpaired_position;
@@ -223,19 +189,16 @@ private:
 
     void update_if_better(State &state, value_type newscore, Manner manner) {
       if (state.score < newscore)
-            // ++ nos_set_update;
             state.set(newscore, manner);
     };
 
     void update_if_better(State &state, value_type newscore, Manner manner, int split) {
         if (state.score < newscore || state.manner == MANNER_NONE)
-            // ++ nos_set_update;
             state.set(newscore, manner, split);
     };
 
     void update_if_better(State &state, value_type newscore, Manner manner, char l1, int l2) {
         if (state.score < newscore || state.manner == MANNER_NONE)
-            // ++ nos_set_update;
             state.set(newscore, manner, l1, l2);
     };
 
