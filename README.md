@@ -48,7 +48,7 @@ Switches LinearFold-C (by default) to LinearFold-V.
 ```
 --fasta
 ```
-Specify that the input is in fasta format. (default: not use SHAPE data)
+Specify that the input is in fasta format. (default FALSE)
 ```
 --verbose or -v
 ```
