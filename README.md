@@ -46,6 +46,10 @@ The beam size (default 100). Use 0 for infinite beam.
 ```
 Switches LinearFold-C (by default) to LinearFold-V.
 ```
+-f
+```
+Specify that the input is in fasta format. (default: not use SHAPE data)
+```
 --verbose
 ```
 Prints out energy of each loop in the structure. (default False)

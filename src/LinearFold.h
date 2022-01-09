@@ -117,6 +117,7 @@ public:
     bool use_shape = false;
     double m = 1.8;
     double b = -0.6;
+    bool is_fasta = false;
 
     struct DecoderResult {
         std::string structure;
@@ -126,17 +127,14 @@ public:
     };
 
     BeamCKYParser(int beam_size=100,
-                  // bool vienna=false,
-                  // bool candidate_list=true,
                   bool nosharpturn=true,
-                  // bool cube_pruning=true,
                   bool is_verbose=false,
                   bool is_constraints=false,
                   bool zuker_subopt=false,
                   float zuker_energy_delta=5.0,
-                  std::string shape_file_path=""); // lisiz, add constraints
+                  std::string shape_file_path="",
+                  bool is_fasta=false); // lisiz, add constraints
 
-    // DecoderResult parse(std::string& seq);
     DecoderResult parse(std::string& seq, std::vector<int>* cons);
     void outside(std::vector<int> next_pair[]); //for zuker subopt
 

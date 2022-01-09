@@ -8,15 +8,16 @@ import os
 FLAGS = flags.FLAGS
 
 def setgflags():
-    flags.DEFINE_integer('b', 100, "set beam size, (DEFAULT=100)")
-    flags.DEFINE_boolean('V', False, "use vienna parameters, (DEFAULT=FALSE)")
-    flags.DEFINE_boolean('sharpturn', False, "enable sharp turn in prediction, (DEFAULT=FALSE)")
-    flags.DEFINE_boolean('verbose', False, "print out energy of each loop in the structure, (DEFAULT=FALSE)")
-    flags.DEFINE_boolean('eval', False, "print out energy of a given structure, (DEFAULT=FALSE)") # adding eval mode
-    flags.DEFINE_boolean('constraints', False, "print out energy of a given structure, (DEFAULT=FALSE)") # adding eval mode
-    flags.DEFINE_boolean('zuker', False, "output Zuker suboptimal structures, (DEFAULT=FALSE)")
-    flags.DEFINE_float('delta', 5.0, "compute Zuker suboptimal structures with scores or energies(-V, kcal/mol) in a centain range of the optimum, (DEFAULT=5.0)")
-    flags.DEFINE_string('shape', '', "use SHAPE reactivity data to guide structure predictions") # SHAPE
+    flags.DEFINE_integer('beamsize', 100, "set beam size", short_name='b')
+    flags.DEFINE_boolean('Vienna', False, "use vienna parameters", short_name='V')
+    flags.DEFINE_boolean('sharpturn', False, "enable sharp turn in prediction")
+    flags.DEFINE_boolean('verbose', False, "print out energy of each loop in the structure", short_name='v')
+    flags.DEFINE_boolean('eval', False, "print out energy of a given structure") # adding eval mode
+    flags.DEFINE_boolean('constraints', False, "print out energy of a given structure") # adding eval mode
+    flags.DEFINE_boolean('zuker', False, "output Zuker suboptimal structures")
+    flags.DEFINE_float('delta', 5.0, "compute Zuker suboptimal structures with scores or energies(-V, kcal/mol) in a centain range of the optimum")
+    flags.DEFINE_string('shape', '', "specify a file name that contains SHAPE reactivity data, (DEFAULT=not use SHAPE data)") # SHAPE
+    flags.DEFINE_boolean('fasta', False, "input is in fasta format, (DEFAULT=FALSE)", short_name='f') # FASTA format
     argv = FLAGS(sys.argv)
 
 def main():
@@ -28,13 +29,14 @@ def main():
     is_constraints = '1' if FLAGS.constraints else '0'
     zuker_subopt = '1' if FLAGS.zuker else '0'
     delta = str(FLAGS.delta)
+    is_fasta = '1' if FLAGS.fasta else '0'
 
     # SHAPE
     shape_file_path = str(FLAGS.shape)
 
 
     path = os.path.dirname(os.path.abspath(__file__))
-    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval, is_constraints, zuker_subopt, delta, shape_file_path]
+    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval, is_constraints, zuker_subopt, delta, shape_file_path, is_fasta]
     subprocess.call(cmd, stdin=sys.stdin)
     
 if __name__ == '__main__':

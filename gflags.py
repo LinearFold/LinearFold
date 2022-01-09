@@ -904,8 +904,8 @@ class FlagValues:
 			# N.B.: return the rest of the command-line! (non-flag arguments)
       return self.__call2__(argv)
     except FlagsError, e:
-	# lhuang: to 2> instead of >
-	import sys
+      	# lhuang: to 2> instead of >
+      	import sys
         print >> sys.stderr, 'Error: %s\nUsage: %s [flags]\n%s' % (e, list(argv)[0], FLAGS)
         sys.exit(1)
 
