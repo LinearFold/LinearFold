@@ -29,11 +29,8 @@ def main():
     is_constraints = '1' if FLAGS.constraints else '0'
     zuker_subopt = '1' if FLAGS.zuker else '0'
     delta = str(FLAGS.delta)
-    is_fasta = '1' if FLAGS.fasta else '0'
-
-    # SHAPE
     shape_file_path = str(FLAGS.shape)
-
+    is_fasta = '1' if FLAGS.fasta else '0'
 
     path = os.path.dirname(os.path.abspath(__file__))
     cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval, is_constraints, zuker_subopt, delta, shape_file_path, is_fasta]
