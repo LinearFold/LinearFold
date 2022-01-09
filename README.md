@@ -38,19 +38,19 @@ Both FASTA format and pure-sequence format are supported for input.
 
 OPTIONS:
 ```
--b BEAM_SIZE
+--beamsize BEAM_SIZE or -b BEAM_SIZE 
 ```
 The beam size (default 100). Use 0 for infinite beam.
 ```
--V
+--Vienna or -V
 ```
 Switches LinearFold-C (by default) to LinearFold-V.
 ```
--f
+--fasta
 ```
 Specify that the input is in fasta format. (default: not use SHAPE data)
 ```
---verbose
+--verbose or -v
 ```
 Prints out energy of each loop in the structure. (default False)
 ```
