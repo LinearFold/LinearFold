@@ -170,6 +170,12 @@ GCCUGGUGACCAUAGCGAGUCGGUACCACCCCUUCCCAUCCCGAACAGGACCGUGAAACGACUCCGCGCCGAUGAUAGUG
 ((((((........((((((((.(((............(((......)))..)))...))))).)))..(((((((..(((...(((......))).))).))))))))))))) (-66.30)
 ```
 
+## Example Run Predict (dangling ends are ignored)
+```
+echo GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA | ./linearfold -V --dangles 0
+GGGCUCGUAGAUCAGCGGUAGAUCGCUUCCUUCGCAAGGAAGCCCUGGGUUCAAAUCCCAGCGAGUCCACCA
+(((((((..((((.......))))((((((((...)))))))).(((((.......)))))))))))).... (-25.50)
+```
 
 ## Example Run Eval
 ```
