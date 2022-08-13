@@ -90,7 +90,7 @@ https://rna.urmc.rochester.edu/Text/File_Formats.html#SHAPE
 --dangles INT
 ```
 How to treat "dangling end" energies for bases adjacent to helices in free ends and multi-loops, (DEFAULT=2)
---dangle 0 ignores dangleint ends altogether
+--dangle 0 ignores dangleint ends altogether;
 --dangle 2 dangling energies are added for the bases adjacent to a helix on both sides in any case
 
 
