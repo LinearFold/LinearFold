@@ -171,17 +171,21 @@ inline int v_score_single(int i, int j, int p, int q,
 }
 
 // multi_loop
-inline int E_MLstem(int type, int si1, int sj1) {
+inline int E_MLstem(int type, int si1, int sj1, int dangle_model) {
     int energy = 0;
 
-    if(si1 >= 0 && sj1 >= 0){
-        energy += mismatchM37[type][si1][sj1];
-    }
-    else if (si1 >= 0){
-        energy += dangle5_37[type][si1];
-    }
-    else if (sj1 >= 0){
-        energy += dangle3_37[type][sj1];
+    if (dangle_model != 0){
+
+        if(si1 >= 0 && sj1 >= 0){
+            energy += mismatchM37[type][si1][sj1];
+        }
+        else if (si1 >= 0){
+            energy += dangle5_37[type][si1];
+        }
+        else if (sj1 >= 0){
+            energy += dangle3_37[type][sj1];
+        }
+
     }
 
     if(type > 2) {
@@ -193,14 +197,14 @@ inline int E_MLstem(int type, int si1, int sj1) {
     return energy;
 }
 
-inline int v_score_M1(int i, int j, int k, int nuci_1, int nuci, int nuck, int nuck1, int len) {
+inline int v_score_M1(int i, int j, int k, int nuci_1, int nuci, int nuck, int nuck1, int len, int dangle_model) {
     int p = i;
     int q = k;
     int tt = NUM_TO_PAIR(nuci, nuck);
     int sp1 = NUM_TO_NUC(nuci_1);
     int sq1 = NUM_TO_NUC(nuck1);
 
-    return E_MLstem(tt, sp1, sq1);
+    return E_MLstem(tt, sp1, sq1, dangle_model);
 
 }
 
@@ -208,29 +212,33 @@ inline int v_score_multi_unpaired(int i, int j) {
     return 0;
 }
 
-inline int v_score_multi(int i, int j, int nuci, int nuci1, int nucj_1, int nucj, int len) {
+inline int v_score_multi(int i, int j, int nuci, int nuci1, int nucj_1, int nucj, int len, int dangle_model) {
     int tt = NUM_TO_PAIR(nucj, nuci);
     int si1 = NUM_TO_NUC(nuci1);
     int sj1 = NUM_TO_NUC(nucj_1);
 
-    return E_MLstem(tt, sj1, si1) + ML_closing37;
+    return E_MLstem(tt, sj1, si1, dangle_model) + ML_closing37;
 }
 
 // exterior_loop
-inline int v_score_external_paired(int i, int j, int nuci_1, int nuci, int nucj, int nucj1, int len) {
+inline int v_score_external_paired(int i, int j, int nuci_1, int nuci, int nucj, int nucj1, int len, int dangle_model) {
     int type = NUM_TO_PAIR(nuci, nucj);
     int si1 = NUM_TO_NUC(nuci_1);
     int sj1 = NUM_TO_NUC(nucj1);
     int energy = 0;
 
-    if(si1 >= 0 && sj1 >= 0){
-        energy += mismatchExt37[type][si1][sj1];
-    }
-    else if (si1 >= 0){
-        energy += dangle5_37[type][si1];
-    }
-    else if (sj1 >= 0){
-        energy += dangle3_37[type][sj1];
+    if (dangle_model != 0){
+
+        if(si1 >= 0 && sj1 >= 0){
+            energy += mismatchExt37[type][si1][sj1];
+        }
+        else if (si1 >= 0){
+            energy += dangle5_37[type][si1];
+        }
+        else if (sj1 >= 0){
+            energy += dangle3_37[type][sj1];
+        }
+
     }
 
     if(type > 2)

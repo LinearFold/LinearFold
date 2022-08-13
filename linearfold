@@ -18,6 +18,7 @@ def setgflags():
     flags.DEFINE_float('delta', 5.0, "compute Zuker suboptimal structures with scores or energies(-V, kcal/mol) in a centain range of the optimum")
     flags.DEFINE_string('shape', '', "specify a file name that contains SHAPE reactivity data (DEFAULT: not use SHAPE data)") # SHAPE
     flags.DEFINE_boolean('fasta', False, "input is in fasta format") # FASTA format
+    flags.DEFINE_integer('dangles', 2, "the way to treat `dangling end' energies for bases adjacent to helices in free ends and multi-loops (default=`2')")
     argv = FLAGS(sys.argv)
 
 def main():
@@ -31,9 +32,10 @@ def main():
     delta = str(FLAGS.delta)
     shape_file_path = str(FLAGS.shape)
     is_fasta = '1' if FLAGS.fasta else '0'
+    dangles = str(FLAGS.dangles)
 
     path = os.path.dirname(os.path.abspath(__file__))
-    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval, is_constraints, zuker_subopt, delta, shape_file_path, is_fasta]
+    cmd = ["%s/%s" % (path, ('bin/linearfold_v' if use_vienna else 'bin/linearfold_c')), beamsize, is_sharpturn, is_verbose, is_eval, is_constraints, zuker_subopt, delta, shape_file_path, is_fasta, dangles]
     subprocess.call(cmd, stdin=sys.stdin)
     
 if __name__ == '__main__':

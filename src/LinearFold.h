@@ -118,6 +118,7 @@ public:
     double m = 1.8;
     double b = -0.6;
     bool is_fasta = false;
+    int dangle_model;
 
     struct DecoderResult {
         std::string structure;
@@ -133,7 +134,8 @@ public:
                   bool zuker_subopt=false,
                   float zuker_energy_delta=5.0,
                   std::string shape_file_path="",
-                  bool is_fasta=false); // lisiz, add constraints
+                  bool is_fasta=false,
+                  int dangle_model=2); // lisiz, add constraints
 
     DecoderResult parse(std::string& seq, std::vector<int>* cons);
     void outside(std::vector<int> next_pair[]); //for zuker subopt
