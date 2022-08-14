@@ -21,7 +21,7 @@
 #include "LinearFold.h"
 #include "Utils/utility.h"
 #include "Utils/utility_v.h"
-#include "LinearFoldEval.cpp" // adding eval mode
+#include "LinearFoldEval.h" // adding eval mode: lhuang include .h not .cpp!
 
 #define SPECIAL_HP
 using namespace std;

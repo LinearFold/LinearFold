@@ -6,8 +6,8 @@
  edited by: 03/2021
 */
 
-#ifndef FASTCKY_BEAMCKYPAR_H
-#define FASTCKY_BEAMCKYPAR_H
+#ifndef LINEARFOLD_H
+#define LINEARFOLD_H
 
 #include <string>
 #include <limits>
@@ -208,4 +208,4 @@ private:
     std::vector<std::pair<value_type, int>> scores;
 };
 
-#endif //FASTCKY_BEAMCKYPAR_H
+#endif //LINEARFOLD_H

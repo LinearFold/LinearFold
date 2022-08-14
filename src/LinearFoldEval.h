@@ -6,6 +6,9 @@
  edited by: 12/2018
 */
 
+#ifndef LINEARFOLDEVAL_H
+#define LINEARFOLDEVAL_H
+
 #include <stack>
 #include <string>
 #include <vector>
@@ -132,3 +135,5 @@ long eval(string seq, string ref, bool is_verbose, int dangle_model) {
     total_energy += external_energy;
     return total_energy;
 }
+
+#endif // LINEARFOLDEVAL_H
