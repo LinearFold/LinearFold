@@ -179,12 +179,16 @@ inline int E_MLstem(int type, int si1, int sj1, int dangle_model) {
         if(si1 >= 0 && sj1 >= 0){
             energy += mismatchM37[type][si1][sj1];
         }
-        else if (si1 >= 0){
-            energy += dangle5_37[type][si1];
-        }
-        else if (sj1 >= 0){
-            energy += dangle3_37[type][sj1];
-        }
+
+	// lhuang: multi dangles are never used
+	// non-closing: ...x(...)x...
+	// closing:     (x.........x)
+        /* else if (si1 >= 0){ */
+        /*     energy += dangle5_37[type][si1]; */
+        /* } */
+        /* else if (sj1 >= 0){ */
+        /*     energy += dangle3_37[type][sj1]; */
+        /* } */
 
     }
 
