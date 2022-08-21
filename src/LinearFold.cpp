@@ -19,9 +19,15 @@
 #include <set>
 
 #include "LinearFold.h"
-#include "Utils/utility.h"
-#include "Utils/utility_v.h"
+
 #include "LinearFoldEval.h" // adding eval mode: lhuang include .h not .cpp!
+
+#ifdef lv
+#include "Utils/utility_v.h"
+#else
+#include "Utils/utility.h"
+#endif
+
 
 #define SPECIAL_HP
 using namespace std;
