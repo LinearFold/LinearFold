@@ -19,9 +19,15 @@
 #include <set>
 
 #include "LinearFold.h"
-#include "Utils/utility.h"
-#include "Utils/utility_v.h"
+
 #include "LinearFoldEval.h" // adding eval mode: lhuang include .h not .cpp!
+
+#ifdef lv
+#include "Utils/utility_v.h"
+#else
+#include "Utils/utility.h"
+#endif
+
 
 #define SPECIAL_HP
 using namespace std;
@@ -1066,8 +1072,8 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
                 int nuci = nucs[i];
                 int nuci_1 = (i-1>-1) ? nucs[i-1] : -1;
 
-                // 2. M = P
-                if(i > 0 && j < seq_length-1){
+                // 2. M = P // lhuang: check j (this P is not the last non-closing P in multi)
+                if(i > 0 && j < seq_length-6){
                     value_type newscore;
 #ifdef lv
                         newscore = - v_score_M1(i, j, j, nuci_1, nuci, nucj, nucj1, seq_length, dangle_model) + state.score;
@@ -1079,8 +1085,8 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
                 }
                 //printf(" M = P at %d\n", j); fflush(stdout);
 
-                // 3. M2 = M + P
-                if(!use_cube_pruning) {
+                // 3. M2 = M + P // lhuang: check j < n-1
+                if(!use_cube_pruning && j < seq_length - 1) {
                     int k = i - 1;
                     if ( k > 0 && !bestM[k].empty()) {
                         value_type M1_score;
@@ -1219,7 +1225,8 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
                 }
             }
 
-            if (use_cube_pruning) {
+	    // lhuang: check j < n-1
+            if (use_cube_pruning && j < seq_length - 1) {
                 // 3. M2 = M + P with cube pruning
                 vector<int> valid_Ps;
                 vector<value_type> M1_scores;

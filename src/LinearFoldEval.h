@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "LinearFold.h"
+
 #include "Utils/utility_v.h"
-#include "Utils/utility.h"
 
 using namespace std;
 
@@ -33,7 +33,7 @@ long eval(string seq, string ref, bool is_verbose, int dangle_model) {
     eval_nucs.clear();
     eval_nucs.resize(seq_length);
     for (int i = 0; i < seq_length; ++i) {
-        eval_nucs[i] = GET_ACGU_NUM(seq[i]);
+      eval_nucs[i] = GET_ACGU_NUM_V(seq[i]); // lhuang: explicitly use Vienna coding (not very nice)
     }
 
     long total_energy = 0;

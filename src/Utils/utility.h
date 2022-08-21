@@ -13,28 +13,11 @@
 #include <cstring>
 #include <assert.h>
 
+#include "shared.h" // lhuang
 #include "feature_weight.h"
 
-#define INF 1000000007
+//#define HELIX_STACKING_OLD(x, y, z, w) (_helix_stacking[GET_ACGU_NUM(x)][GET_ACGU_NUM(y)][GET_ACGU_NUM(z)][GET_ACGU_NUM(w)])
 
-#define NOTON 5 // NUM_OF_TYPE_OF_NUCS
-#define NOTOND 25
-#define NOTONT 125
-
-#define EXPLICIT_MAX_LEN 4
-#define SINGLE_MIN_LEN 0
-#define SINGLE_MAX_LEN 30  // NOTE: *must* <= sizeof(char), otherwise modify State::TraceInfo accordingly
-
-#define HAIRPIN_MAX_LEN 30
-#define BULGE_MAX_LEN SINGLE_MAX_LEN
-#define INTERNAL_MAX_LEN SINGLE_MAX_LEN
-#define SYMMETRIC_MAX_LEN 15
-#define ASYMMETRY_MAX_LEN 28
-
-#define GET_ACGU_NUM(x) ((x=='A'? 0 : (x=='C'? 1 : (x=='G'? 2 : (x=='U'?3: 4)))))
-#define HELIX_STACKING_OLD(x, y, z, w) (_helix_stacking[GET_ACGU_NUM(x)][GET_ACGU_NUM(y)][GET_ACGU_NUM(z)][GET_ACGU_NUM(w)])
-
-bool _allowed_pairs[NOTON][NOTON];
 bool _helix_stacking[NOTON][NOTON][NOTON][NOTON];
 double cache_single[SINGLE_MAX_LEN+1][SINGLE_MAX_LEN+1];
 
@@ -74,38 +57,6 @@ void initialize_cachesingle()
             }
         }
     return;
-}
-
-void initialize()
-{
-    _allowed_pairs[GET_ACGU_NUM('A')][GET_ACGU_NUM('U')] = true;
-    _allowed_pairs[GET_ACGU_NUM('U')][GET_ACGU_NUM('A')] = true;
-    _allowed_pairs[GET_ACGU_NUM('C')][GET_ACGU_NUM('G')] = true;
-    _allowed_pairs[GET_ACGU_NUM('G')][GET_ACGU_NUM('C')] = true;
-    _allowed_pairs[GET_ACGU_NUM('G')][GET_ACGU_NUM('U')] = true;
-    _allowed_pairs[GET_ACGU_NUM('U')][GET_ACGU_NUM('G')] = true;
-
-    HELIX_STACKING_OLD('A', 'U', 'A', 'U') = true;
-    HELIX_STACKING_OLD('A', 'U', 'C', 'G') = true;
-    HELIX_STACKING_OLD('A', 'U', 'G', 'C') = true;
-    HELIX_STACKING_OLD('A', 'U', 'G', 'U') = true;
-    HELIX_STACKING_OLD('A', 'U', 'U', 'A') = true;
-    HELIX_STACKING_OLD('A', 'U', 'U', 'G') = true;
-    HELIX_STACKING_OLD('C', 'G', 'A', 'U') = true;
-    HELIX_STACKING_OLD('C', 'G', 'C', 'G') = true;
-    HELIX_STACKING_OLD('C', 'G', 'G', 'C') = true;
-    HELIX_STACKING_OLD('C', 'G', 'G', 'U') = true;
-    HELIX_STACKING_OLD('C', 'G', 'U', 'G') = true;
-    HELIX_STACKING_OLD('G', 'C', 'A', 'U') = true;
-    HELIX_STACKING_OLD('G', 'C', 'C', 'G') = true;
-    HELIX_STACKING_OLD('G', 'C', 'G', 'U') = true;
-    HELIX_STACKING_OLD('G', 'C', 'U', 'G') = true;
-    HELIX_STACKING_OLD('G', 'U', 'A', 'U') = true;
-    HELIX_STACKING_OLD('G', 'U', 'G', 'U') = true;
-    HELIX_STACKING_OLD('G', 'U', 'U', 'G') = true;
-    HELIX_STACKING_OLD('U', 'A', 'A', 'U') = true;
-    HELIX_STACKING_OLD('U', 'A', 'G', 'U') = true;
-    HELIX_STACKING_OLD('U', 'G', 'G', 'U') = true;
 }
 
 // ------------- nucs based scores -------------
