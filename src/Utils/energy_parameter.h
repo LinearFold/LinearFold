@@ -14,6 +14,7 @@
 #define NBPAIRS 7 // NP CG GC GU UG AU UA NN
 #endif
 
+// pairs: 0:NP 1:CG 2:GC 3:GU 4:UG 5:AU 6:UA 7:NN
 // nucleotides: CONTRAfold: 0:A 1:C 2:G 3:U 4:N ; Vienna: 0:N 1:A 2:C 3:G 4:U
 // TODO: unify
 
