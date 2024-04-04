@@ -10,6 +10,7 @@
 #define EXPLICIT_MAX_LEN 4
 #define SINGLE_MIN_LEN 0
 #define SINGLE_MAX_LEN 30  // NOTE: *must* <= sizeof(char), otherwise modify State::TraceInfo accordingly
+#define MULTIPLE_FIRST_MAX_LEN 30 // NOTE: the first loop segment of multi-loop
 
 #define HAIRPIN_MAX_LEN 30
 #define BULGE_MAX_LEN SINGLE_MAX_LEN

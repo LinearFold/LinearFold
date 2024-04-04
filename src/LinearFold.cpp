@@ -1161,7 +1161,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
 #else
                         precomputed = score_junction_B(j, i, nucj, nucj1, nuci_1, nuci);
 #endif
-                    for (int p = i - 1; p >= std::max(i - SINGLE_MAX_LEN, 0); --p) {
+                    for (int p = i - 1; p >= std::max(i - SINGLE_MAX_LEN - 1, 0); --p) {
                         int nucp = nucs[p];
                         int nucp1 = nucs[p + 1]; // hzhang: move here
                         int q = next_pair[nucp][j];
@@ -1351,7 +1351,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
 
                 // 1. multi-loop
                 {
-                    for (int p = i-1; p >= std::max(i - SINGLE_MAX_LEN, 0); --p) {
+                    for (int p = i-1; p >= std::max(i - MULTIPLE_FIRST_MAX_LEN - 1, 0); --p) {
                         int nucp = nucs[p];
                         int q = next_pair[nucp][j];
 
@@ -1369,7 +1369,7 @@ BeamCKYParser::DecoderResult BeamCKYParser::parse(string& seq, vector<int>* cons
                                 continue;
                         }
 
-                        if (q != -1 && ((i - p - 1) <= SINGLE_MAX_LEN)) {
+                        if (q != -1 && ((i - p - 1) <= MULTIPLE_FIRST_MAX_LEN)) {
                             // the current shape is p..i M2 j ..q
 
                             value_type newscore;
@@ -1650,10 +1650,10 @@ void BeamCKYParser::outside(vector<int> next_pair[]){
 
                 // 1. multi-loop
                 {
-                    for (int p = i-1; p >= std::max(i - SINGLE_MAX_LEN, 0); --p) {
+                    for (int p = i-1; p >= std::max(i - MULTIPLE_FIRST_MAX_LEN - 1, 0); --p) {
                         int nucp = nucs[p];
                         int q = next_pair[nucp][j];
-                        if (q != -1 && ((i - p - 1) <= SINGLE_MAX_LEN)) {
+                        if (q != -1 && ((i - p - 1) <= MULTIPLE_FIRST_MAX_LEN)) {
 #ifdef lv
                             if (bestMulti_beta[q][p].manner != 0){
                                 update_if_better(state, bestMulti_beta[q][p].score, MANNER_MULTI, static_cast<char>(i - p), q - j);
