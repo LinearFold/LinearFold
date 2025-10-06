@@ -50,28 +50,6 @@ enum BestTypes {
   TYPE_M2,
 };
 
-bool cmp(const std::tuple<value_type, int, int>& a, const std::tuple<value_type, int, int>& b) 
-{ 
-    if (std::get<0>(a) != std::get<0>(b))
-        return (std::get<0>(a) < std::get<0>(b));
-
-    else
-        return  ((std::get<1>(a) - std::get<2>(a)) < (std::get<1>(b) - std::get<2>(b)));
-
-} 
-
-void window_fill(std::set<std::pair<int,int> >& window_visited, const int i, const int j, const int seq_length, const int window_size){
-
-    for (int ii = std::max(0,i-window_size); ii <= std::min(seq_length-1, i+window_size); ++ii){
-        for (int jj = std::max(0,j-window_size); jj <= std::min(seq_length-1, j+window_size); ++jj){
-            if (ii < jj){
-                window_visited.insert(std::make_pair(ii,jj));
-            }
-        }
-    }
-    return;
-}
-
 struct State {
     // double score;
     value_type score;
